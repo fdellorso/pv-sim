@@ -16,17 +16,17 @@ discussed with the user. Phases 1-8 are the "MVP completo ma shallow".
 - [x] Comandi `.opencode/commands/` (8) + aggiornamento `opencode.json`
       (LSP ruff, skills paths, instructions AGENTS.md)
 
-## Phase 1 — Infrastructure & skeleton
+## Phase 1 — Infrastructure & skeleton (done)
 
-- Define `docker-compose.yml` (web, worker, redis, postgres) + Dockerfiles.
-- `pyproject.toml`: add fastapi, uvicorn, sqlalchemy, alembic, redis, arq,
-  jinja2, httpx, pydantic-settings, plotly, weasyprint.
-- Project skeleton: `src/web/`, `src/worker/`, `src/engine/` packages with
-  `__init__.py` and module stubs.
-- DB connection + first Alembic migration with core tables
-  (`simulations`, `load_profiles`, `simulation_results`).
-- **Milestone:** `docker compose up` starts all services and web responds on
-  port 8000.
+- [x] Define `docker-compose.yml` (web, worker, redis, postgres) + Dockerfiles.
+- [x] `pyproject.toml`: add fastapi, uvicorn, sqlalchemy, alembic, redis, arq,
+      jinja2, httpx, pydantic-settings, plotly, weasyprint.
+- [x] Project skeleton: `src/web/`, `src/worker/`, `src/engine/` packages with
+      `__init__.py` and module stubs.
+- [x] DB connection + first Alembic migration with core tables
+      (`simulations`, `load_profiles`, `simulation_results`).
+- [x] **Milestone:** `docker compose up` starts all services and web responds on
+      port 8000.
 
 ## Phase 2 — Weather & PV model
 
