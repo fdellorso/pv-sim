@@ -55,14 +55,15 @@ discussed with the user. Phases 1-8 are the "MVP completo ma shallow".
 - [x] **Milestone:** autoconsumo/autosufficienza computed with battery for one
       year.
 
-## Phase 5 — Economic model
+## Phase 5 — Economic model (done)
 
-- `src/engine/economic_model.py`: per-year cashflow for 20/25/30 years.
-- Loan (annuity) model, ordinary maintenance, extraordinary replacement
-  (inverter at year 10, battery at year 12), RCPV costs
-  (one-time activation + annual fee), monoraria purchase/sell tariffs.
-- Final metrics: NPV, IRR, payback.
-- **Milestone:** CLI simulation returns full economic summary for one scenario.
+- [x] `src/engine/economic_model.py`: per-year cashflow for 20/25/30 years.
+- [x] Loan (annuity) model, ordinary maintenance, extraordinary replacement
+      (inverter at year 10, battery at year 12), RCPV costs
+      (one-time activation + annual fee), monoraria purchase/sell tariffs.
+- [x] Final metrics: NPV, IRR, payback.
+- [x] **Milestone:** CLI simulation returns full economic summary for one
+      scenario.
 
 ## Phase 6 — Worker & job flow
 

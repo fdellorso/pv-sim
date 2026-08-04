@@ -11,7 +11,8 @@ import argparse
 
 import pandas as pd
 
-from src.engine.battery_model import BatteryParams, run_battery
+from src.engine.battery_model import BatteryParams
+from src.engine.economic_model import EconomicParams, run_economics
 from src.engine.load_model import generate_synthetic_curve, load_curve_from_csv
 from src.engine.pv_model import PVSystemParams, run_pv_model
 from src.engine.weather import get_weather
@@ -37,6 +38,22 @@ def build_parser() -> argparse.ArgumentParser:
     battery_group.add_argument("--battery-capacity", type=float, default=10.0, help="battery capacity in kWh")
     battery_group.add_argument("--battery-crate", type=float, default=0.5, help="battery C-rate")
     battery_group.add_argument("--no-battery", action="store_true", help="disable the battery")
+    economic_group = parser.add_argument_group("economics")
+    economic_group.add_argument("--horizon", type=int, default=25, help="analysis horizon in years")
+    economic_group.add_argument("--investment-cost-eur", type=float, default=12000.0)
+    economic_group.add_argument("--purchase-eur-kwh", type=float, default=0.30)
+    economic_group.add_argument("--sell-eur-kwh", type=float, default=0.12)
+    economic_group.add_argument("--maintenance-annual-eur", type=float, default=0.0)
+    economic_group.add_argument("--inverter-replacement-cost", type=float, default=1500.0)
+    economic_group.add_argument("--inverter-replace-at-year", type=int, default=10)
+    economic_group.add_argument("--battery-replacement-cost", type=float, default=2500.0)
+    economic_group.add_argument("--battery-replace-at-year", type=int, default=12)
+    economic_group.add_argument("--grid-annual-eur", type=float, default=30.0)
+    economic_group.add_argument("--grid-activation-eur", type=float, default=100.0)
+    economic_group.add_argument("--loan-interest-pct", type=float, default=0.0)
+    economic_group.add_argument("--loan-years", type=int, default=0)
+    economic_group.add_argument("--pv-degradation", type=float, default=0.5, help="PV degradation %/year")
+    economic_group.add_argument("--discount-rate", type=float, default=4.5, help="discount rate %")
     return parser
 
 
@@ -74,14 +91,46 @@ def main() -> None:
         capacity_kwh=0.0 if args.no_battery else args.battery_capacity,
         c_rate=args.battery_crate,
     )
-    result = run_battery(pv_power, load, battery_params)
 
-    print(f"Autoconsumo (kWh): {round(result.autoconsumo_kwh, 1)}")
-    print(f"Autoconsumo %: {round(result.autoconsumo_pct, 1)}")
-    print(f"Autosufficienza %: {round(result.autosufficienza_pct, 1)}")
+    economic_params = EconomicParams(
+        horizon_years=args.horizon,
+        investment_cost_eur=args.investment_cost_eur,
+        purchase_eur_kwh=args.purchase_eur_kwh,
+        sell_eur_kwh=args.sell_eur_kwh,
+        maintenance_annual_eur=args.maintenance_annual_eur,
+        inverter_replacement_cost_eur=args.inverter_replacement_cost,
+        inverter_replace_at_year=args.inverter_replace_at_year,
+        battery_replacement_cost_eur=args.battery_replacement_cost,
+        battery_replace_at_year=args.battery_replace_at_year,
+        grid_activation_eur=args.grid_activation_eur,
+        grid_annual_eur=args.grid_annual_eur,
+        loan_interest_pct=args.loan_interest_pct or None,
+        loan_years=args.loan_years or None,
+        pv_degradation_pct_year=args.pv_degradation,
+        discount_rate_pct=args.discount_rate,
+    )
+
+    economic = run_economics(pv_power, load, economic_params, battery_params)
+    first = economic.annual[0]
+
+    print(f"Autoconsumo anno 1 (kWh): {round(first.self_consumption_kwh, 1)}")
+    print(f"Autoconsumo anno 1 %: {round(first.self_consumption_pct, 1)}")
+    print(f"Autosufficienza anno 1 %: {round(first.autosufficienza_pct, 1)}")
     if not args.no_battery:
-        print(f"Ricaricato batteria (kWh): {round(result.battery_charge_kwh, 1)}")
-        print(f"Scaricato batteria (kWh): {round(result.battery_discharge_kwh, 1)}")
+        print(f"Ricaricato batteria (kWh): {round(first.battery_charge_kwh, 1)}")
+        print(f"Scaricato batteria (kWh): {round(first.battery_discharge_kwh, 1)}")
+
+    print("\nAnno | Autoconsumo% | Autosufficienza% | Net CF (EUR) | Cumulativo (EUR)")
+    for entry in economic.annual:
+        print(
+            f"{entry.year:4d} | {entry.self_consumption_pct:12.1f} | "
+            f"{entry.autosufficienza_pct:16.1f} | {entry.net_cashflow_eur:12.1f} | "
+            f"{entry.cumulative_cashflow_eur:16.1f}"
+        )
+
+    print(f"\nNPV: {round(economic.npv_eur, 1)} EUR")
+    print(f"IRR: {round(economic.irr_pct, 2) if economic.irr_pct is not None else 'n/a'} %")
+    print(f"Payback: anno {economic.payback_years}")
 
 
 if __name__ == "__main__":
