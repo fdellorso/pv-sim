@@ -37,14 +37,15 @@ discussed with the user. Phases 1-8 are the "MVP completo ma shallow".
 - [x] **Milestone:** PV production profile matches prototype output for same
       params.
 
-## Phase 3 — Load model
+## Phase 3 — Load model (done)
 
-- `src/engine/load_model.py`: load a real CSV curve; metadata model for the
-  archive (`load_profiles`).
-- Synthetic generator: pick an archived "similar" profile, scale to annual
-  consumption.
-- Upload flow in web: save CSV to `data/load_profiles/`, insert metadata row.
-- **Milestone:** a simulation can run with a real or synthetic curve.
+- [x] `src/engine/load_model.py`: load a real CSV curve; metadata model for the
+      archive (`load_profiles`).
+- [x] Synthetic generator: pick an archived "similar" profile, scale to annual
+      consumption.
+- [x] Upload flow in web: save CSV to `data/load_profiles/`, insert metadata
+      row.
+- [x] **Milestone:** a simulation can run with a real or synthetic curve.
 
 ## Phase 4 — Battery model
 

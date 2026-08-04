@@ -11,6 +11,7 @@ import argparse
 
 import pandas as pd
 
+from src.engine.load_model import generate_synthetic_curve, load_curve_from_csv
 from src.engine.pv_model import PVSystemParams, run_pv_model
 from src.engine.weather import get_weather
 
@@ -27,6 +28,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--azimuth", type=float, default=180.0)
     parser.add_argument("--inverter-kw", type=float, default=5.0)
     parser.add_argument("--system-losses-pct", type=float, default=0.0)
+    load_group = parser.add_mutually_exclusive_group()
+    load_group.add_argument("--load-csv", metavar="FILE", help="use a real CSV load curve")
+    load_group.add_argument("--load-synthetic", action="store_true", help="generate a synthetic load curve")
+    parser.add_argument("--annual-consumption", type=float, default=4000.0, help="kWh for synthetic load")
     return parser
 
 
@@ -49,6 +54,16 @@ def main() -> None:
     production_kwh = float(pv_power.sum()) * DT_HOURS
 
     print(f"Produzione FV (kWh): {round(production_kwh, 1)}")
+
+    if args.load_csv:
+        load = load_curve_from_csv(args.load_csv, params.tz)
+    elif args.load_synthetic:
+        load = generate_synthetic_curve(pv_power.index, args.annual_consumption)
+    else:
+        return
+
+    consumption_kwh = float(load.sum()) * DT_HOURS
+    print(f"Consumo (kWh): {round(consumption_kwh, 1)}")
 
 
 if __name__ == "__main__":
