@@ -18,6 +18,25 @@ maintenance, and grid-management costs.
 The user will explicitly switch modes. In build mode, do not make sweeping
 changes without a prior plan or explicit request.
 
+## Session start (riprendere una sessione)
+
+Quando l'utente dice "ripartiamo", "riprendiamo", "riapriamo" o avvia una
+nuova sessione sul progetto, esegui questo rituale PRIMA di qualsiasi lavoro:
+
+1. **Contesto** (già caricato via `instructions`): `AGENTS.md` + `CONTEXT.md`.
+2. **Stato progressivo**:
+   - Leggi l'handoff più recente in `docs/handoffs/`
+     (`YYYY-MM-DD-<slug>.md`, ordinati per data desc).
+   - Leggi `docs/roadmap.md` e verifica quali fasi sono marcate done.
+   - `git log --oneline -5` e `git status --short` per lo stato del repo.
+3. **Riepiloga** all'utente: fase corrente, cosa è stato completato, cosa è
+   in corso, prossimi passi, eventuali blocchi/domande aperte dall'handoff.
+4. **Chiedi conferma** prima di iniziare qualsiasi lavoro: proponi il prossimo
+   passo (dalla roadmap) e aspetta l'ok dell'utente.
+
+Non riassumere la documentazione: usa gli handoff e la roadmap come fonte di
+verità dello stato. Se non trovi handoff, usa la roadmap e lo stato di git.
+
 ## Stack
 
 | Layer | Choice |

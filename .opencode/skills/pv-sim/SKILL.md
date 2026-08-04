@@ -20,6 +20,13 @@ Always end a plan session with a concrete plan and ask the user to switch to
 build mode. In build mode, implement step by step, verify with `/test` and
 `/lint`, and finish with a `/commit` and an optional `/handoff`.
 
+## Session resume
+
+When a session starts or the user says "ripartiamo", read the latest handoff
+in `docs/handoffs/`, check `docs/roadmap.md` for phase status, and verify with
+`git log`/`git status`. Summarize current phase and next steps, then wait for
+the user's go-ahead.
+
 ## Domain glossary
 
 Canonical terms live in `CONTEXT.md` at the repo root. Read it before touching
