@@ -11,6 +11,7 @@ import argparse
 
 import pandas as pd
 
+from src.engine.battery_model import BatteryParams, run_battery
 from src.engine.load_model import generate_synthetic_curve, load_curve_from_csv
 from src.engine.pv_model import PVSystemParams, run_pv_model
 from src.engine.weather import get_weather
@@ -32,6 +33,10 @@ def build_parser() -> argparse.ArgumentParser:
     load_group.add_argument("--load-csv", metavar="FILE", help="use a real CSV load curve")
     load_group.add_argument("--load-synthetic", action="store_true", help="generate a synthetic load curve")
     parser.add_argument("--annual-consumption", type=float, default=4000.0, help="kWh for synthetic load")
+    battery_group = parser.add_argument_group("battery")
+    battery_group.add_argument("--battery-capacity", type=float, default=10.0, help="battery capacity in kWh")
+    battery_group.add_argument("--battery-crate", type=float, default=0.5, help="battery C-rate")
+    battery_group.add_argument("--no-battery", action="store_true", help="disable the battery")
     return parser
 
 
@@ -64,6 +69,19 @@ def main() -> None:
 
     consumption_kwh = float(load.sum()) * DT_HOURS
     print(f"Consumo (kWh): {round(consumption_kwh, 1)}")
+
+    battery_params = BatteryParams(
+        capacity_kwh=0.0 if args.no_battery else args.battery_capacity,
+        c_rate=args.battery_crate,
+    )
+    result = run_battery(pv_power, load, battery_params)
+
+    print(f"Autoconsumo (kWh): {round(result.autoconsumo_kwh, 1)}")
+    print(f"Autoconsumo %: {round(result.autoconsumo_pct, 1)}")
+    print(f"Autosufficienza %: {round(result.autosufficienza_pct, 1)}")
+    if not args.no_battery:
+        print(f"Ricaricato batteria (kWh): {round(result.battery_charge_kwh, 1)}")
+        print(f"Scaricato batteria (kWh): {round(result.battery_discharge_kwh, 1)}")
 
 
 if __name__ == "__main__":

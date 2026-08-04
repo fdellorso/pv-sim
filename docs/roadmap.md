@@ -47,12 +47,13 @@ discussed with the user. Phases 1-8 are the "MVP completo ma shallow".
       row.
 - [x] **Milestone:** a simulation can run with a real or synthetic curve.
 
-## Phase 4 — Battery model
+## Phase 4 — Battery model (done)
 
-- `src/engine/battery_model.py`: C-rate-limited charge/discharge, round-trip
-  efficiency, per-year capacity degradation.
-- Wire battery into the engine pipeline (PV surplus → battery → load).
-- **Milestone:** autoconsumo/autosufficienza computed with battery for one year.
+- [x] `src/engine/battery_model.py`: C-rate-limited charge/discharge, round-trip
+      efficiency, per-year capacity degradation.
+- [x] Wire battery into the engine pipeline (PV surplus → battery → load).
+- [x] **Milestone:** autoconsumo/autosufficienza computed with battery for one
+      year.
 
 ## Phase 5 — Economic model
 
