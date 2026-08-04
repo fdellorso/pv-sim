@@ -28,13 +28,14 @@ discussed with the user. Phases 1-8 are the "MVP completo ma shallow".
 - [x] **Milestone:** `docker compose up` starts all services and web responds on
       port 8000.
 
-## Phase 2 — Weather & PV model
+## Phase 2 — Weather & PV model (done)
 
-- `src/engine/weather.py`: `get_pvgis_tmy` (SARAH3) + 15min interpolation.
-- `src/engine/pv_model.py`: `ModelChain` with tilt/azimuth, inverter clipping
-  (`min(ac, inverter_kw)`), degradation parameter, system losses.
-- CLI smoke test script (`/sim`) computing one-year production.
-- **Milestone:** PV production profile matches prototype output for same params.
+- [x] `src/engine/weather.py`: `get_pvgis_tmy` (SARAH3) + 15min interpolation.
+- [x] `src/engine/pv_model.py`: `ModelChain` with tilt/azimuth, inverter clipping
+      (`min(ac, inverter_kw)`), degradation parameter, system losses.
+- [x] CLI smoke test script (`/sim`) computing one-year production.
+- [x] **Milestone:** PV production profile matches prototype output for same
+      params.
 
 ## Phase 3 — Load model
 
