@@ -3,6 +3,8 @@
 Phased plan from the standalone prototype to the full Dockerized PV-Sim.
 Phase 0 is complete; Phases 1-10 build toward the MVP described in the plan
 discussed with the user. Phases 1-8 are the "MVP completo ma shallow".
+Phases 11-13 (branch `desktop`) add a standalone desktop variant via
+pywebview (see `docs/adr/0004-desktop-pywebview.md`).
 
 ## Phase 0 — Setup & documentation (done)
 
@@ -104,6 +106,42 @@ discussed with the user. Phases 1-8 are the "MVP completo ma shallow".
 - Lint/typecheck (ruff + pyright) — **confirm with user before adding.**
 - Error handling, logging, edge cases (bad CSV, PVGIS outage).
 - Deployment docs and `.env.example` finalization.
+
+## Phase 11 — Desktop: SQLite migration (branch `desktop`)
+
+Vedi `docs/adr/0004-desktop-pywebview.md`. Il branch `desktop` diverge da
+`main` (che resta web/Docker/PostgreSQL/Redis).
+
+- [ ] Switch `DATABASE_URL`: `postgresql+asyncpg://...` → `sqlite+aiosqlite:///pvsim.db`
+- [ ] Alembic: abilitare il batch mode (SQLite non supporta ALTER TABLE nativo)
+- [ ] Verificare `alembic upgrade head` su un DB pulito
+- [ ] Rimuovere `asyncpg`, `redis`, `arq` dalle dipendenze
+- [ ] Rimuovere `docker-compose.yml` (non serve per desktop)
+- [ ] **Milestone:** `uv run uvicorn src.web.main:app` parte con SQLite e
+      `GET /health` risponde
+
+## Phase 12 — Desktop: rimozione Redis/arq, esecuzione diretta
+
+- [ ] `run_simulation_direct(simulation_id)`: apre una propria sessione DB,
+      esegue il pipeline engine in `asyncio.to_thread`, persiste risultati,
+      aggiorna lo status
+- [ ] `POST /api/simulations`: sostituire
+      `request.app.state.arq.enqueue_job(...)` con
+      `background_tasks.add_task(run_simulation_direct, sim.id)`
+- [ ] Rimuovere il lifespan arq da `src/web/main.py`
+- [ ] Rimuovere il package `src/worker/`
+- [ ] **Milestone:** il round-trip di una simulazione funziona senza Redis
+
+## Phase 13 — Desktop: pywebview + PyInstaller
+
+- [ ] Aggiungere `pywebview` e `pyinstaller` alle dipendenze
+- [ ] Creare `desktop.py`: avvio uvicorn in thread, apertura finestra pywebview
+- [ ] Configurare la finestra (titolo, dimensione 1200×800, icona)
+- [ ] Gestire il lifecycle: shutdown ordinato (uvicorn si ferma alla chiusura
+      della finestra)
+- [ ] PyInstaller `.spec` per compilare in singolo eseguibile
+- [ ] File `.desktop` (Linux), note per `.plist` (macOS) e `.exe` (Windows)
+- [ ] **Milestone:** eseguibile standalone avvia l'app in una finestra nativa
 
 ## Notes on scope
 
