@@ -18,6 +18,19 @@ maintenance, and grid-management costs.
 The user will explicitly switch modes. In build mode, do not make sweeping
 changes without a prior plan or explicit request.
 
+## Branch strategy
+
+- `main` è il trunk. **Tutto lo sviluppo (fix, test, enhancement, feature)
+  va su `main`.** È il branch di default per ogni sessione.
+- `desktop` è un feature branch long-lived per le fasi 11-13 (SQLite,
+  rimozione Redis/arq, pywebview). Si allinea periodicamente a `main` con
+  `git merge main`. Quando inizia il lavoro desktop, si fa checkout su
+  `desktop` e si sviluppano solo le modifiche desktop-specifiche.
+- **Regola d'oro**: nessun doppio sviluppo. Un fix o enhancement comune
+  si fa su `main` e arriva su `desktop` via merge, mai il contrario.
+- **All'inizio di ogni sessione**, verificare di essere su `main`:
+  `git branch --show-current`.
+
 ## Session start (riprendere una sessione)
 
 Quando l'utente dice "ripartiamo", "riprendiamo", "riapriamo" o avvia una
