@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <title>PV-Sim — Simulation {{ simulation.id }}</title>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body>
+  <h1>Simulation {{ simulation.id }} — {{ simulation.name }}</h1>
+  <div id="sim-status" hx-get="/simulations/{{ simulation.id }}/status" hx-trigger="load">
+    <span>Caricamento…</span>
+  </div>
+</body>
+</html>

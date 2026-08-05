@@ -1,0 +1,39 @@
+<div id="sim-status"
+     {% if simulation.status in ("queued", "running") %}
+     hx-get="/simulations/{{ simulation.id }}/status"
+     hx-trigger="every 2s"
+     hx-swap="outerHTML"
+     {% endif %}>
+  <p><strong>Stato:</strong> <span class="status status-{{ simulation.status }}">{{ simulation.status }}</span></p>
+  {% if simulation.error_message %}
+    <p class="error">Errore: {{ simulation.error_message }}</p>
+  {% endif %}
+  {% if metrics %}
+    <ul>
+      <li>NPV: {{ "%.0f"|format(metrics.npv_eur) }} EUR</li>
+      <li>IRR: {{ "%.1f"|format(metrics.irr_pct) }} %</li>
+      <li>Payback: anno {{ metrics.payback_years }}</li>
+      <li>Autoconsumo medio: {{ "%.1f"|format(metrics.total_autoconsumo_pct) }} %</li>
+      <li>Autosufficienza media: {{ "%.1f"|format(metrics.total_autosufficienza_pct) }} %</li>
+    </ul>
+    <h2>Annuo</h2>
+    <table>
+      <thead>
+        <tr><th>Anno</th><th>Produzione (kWh)</th><th>Autoconsumo %</th>
+            <th>Autosufficienza %</th><th>Net CF (EUR)</th><th>Cumulativo (EUR)</th></tr>
+      </thead>
+      <tbody>
+        {% for row in results %}
+        <tr>
+          <td>{{ row.year }}</td>
+          <td>{{ "%.0f"|format(row.pv_production_kwh) }}</td>
+          <td>{{ "%.1f"|format(row.self_consumption_pct) }}</td>
+          <td>{{ "%.1f"|format(row.autosufficienza_pct) }}</td>
+          <td>{{ "%.0f"|format(row.net_cashflow_eur) }}</td>
+          <td>{{ "%.0f"|format(row.cumulative_cashflow_eur) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</div>

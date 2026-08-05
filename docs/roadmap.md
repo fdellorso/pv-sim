@@ -65,12 +65,18 @@ discussed with the user. Phases 1-8 are the "MVP completo ma shallow".
 - [x] **Milestone:** CLI simulation returns full economic summary for one
       scenario.
 
-## Phase 6 — Worker & job flow
+## Phase 6 — Worker & job flow (done)
 
-- `src/worker/main.py` + `src/worker/jobs.py`: arq entry point, job functions,
-  status transitions in DB.
-- Web enqueues jobs; HTMX polling endpoint for status.
-- **Milestone:** full job round-trip web → redis → worker → postgres → web.
+- [x] `src/worker/jobs.py`: `run_simulation` job — status transitions in DB
+      (`queued` → `running` → `completed` | `failed`), engine pipeline
+      (weather → pv → load → battery → economics) offloaded to a thread,
+      persistence in `simulation_results` + `simulation_metrics`.
+- [x] `src/worker/main.py`: arq `WorkerSettings` with `on_startup`/`on_shutdown`
+      wiring the async DB session into the job context.
+- [x] Web enqueues jobs (`POST /api/simulations` via `create_pool`), JSON
+      status endpoint (`GET /api/simulations/{id}`), HTMX polling fragment
+      (`GET /simulations/{id}/status`).
+- [x] **Milestone:** full job round-trip web → redis → worker → postgres → web.
 
 ## Phase 7 — Web UI: forms & dashboard
 
