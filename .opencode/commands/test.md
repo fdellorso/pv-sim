@@ -1,15 +1,12 @@
 ---
-description: Esegue la suite di test pytest (infrastruttura da abilitare — vedi roadmap).
+description: Esegue la suite di test pytest.
 ---
 
 Esegue la suite di test con pytest.
 
-1. **Prima di procedere**: l'infrastruttura di test deve essere confermata
-   dall'utente (vedi `docs/roadmap.md`). Se `pyproject.toml` non contiene la
-   config pytest o la directory `tests/` non esiste, segnala che i test non
-   sono ancora configurati e chiedi conferma prima di introdurli.
-2. Esegui `uv run pytest tests/ -v`.
-3. Se presenti, aggiungi `--cov=src --cov-report=term-missing`.
-4. Riporta sintesi dei risultati (passed/failed).
+1. Esegui `uv run pytest tests/ -v`.
+2. Se richiesto, aggiungi la copertura: `uv run pytest tests/ --cov=src --cov-report=term-missing`.
+3. Riporta la sintesi dei risultati (passed/failed) e, in caso di failure,
+   il primo errore con il file/riga interessato.
 
 Eventuali argomenti aggiuntivi (`$@`) vengono passati a pytest.

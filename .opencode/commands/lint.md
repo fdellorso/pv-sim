@@ -1,15 +1,15 @@
 ---
-description: Esegue lint e typecheck (ruff check + pyright). Da abilitare — vedi roadmap.
+description: Esegue lint e typecheck (ruff check + format, pyright).
 ---
 
-Esegue linting e typecheck sul progetto.
+Esegue linting, formattazione e typecheck sul progetto.
 
-1. **Prima di procedere**: lint/typecheck devono essere confermati dall'utente
-   (vedi `docs/roadmap.md`). Se `ruff` o `pyright` non sono in
-   `pyproject.toml` dev dependencies, segnalalo e chiedi conferma prima di
-   aggiungerli.
-2. Esegui `uv run ruff check src/` .
-3. Esegui `uv run pyright src/`.
-4. Riporta errori e warning; se presenti, proponi le correzioni.
+1. Esegui `uv run ruff check .`
+2. Esegui `uv run ruff format --check .`
+3. Esegui `uv run pyright src/`
+4. Se ci sono violazioni, proponi e applica le correzioni (per le righe
+   lunghe: `uv run ruff format .`; per il typecheck: cast o annotazioni
+   mirate), poi rilancia i comandi per confermare che siano puliti.
+5. Riporta errori e warning residui.
 
 Eventuali argomenti aggiuntivi (`$@`) vengono passati a ruff/pyright.
