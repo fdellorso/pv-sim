@@ -43,8 +43,8 @@ def daily_curves_figure(pv: pd.Series, load: pd.Series) -> go.Figure:
 
     def day_traces(day: str, label: str) -> None:
         for series, color, name in (
-            (pv, "#f59e0b", f"FV {label}"),
-            (load, "#3b82f6", f"Carico {label}"),
+            (pv, "#d97706" if label == "inverno" else "#fbbf24", f"FV {label}"),
+            (load, "#1d4ed8" if label == "inverno" else "#60a5fa", f"Carico {label}"),
         ):
             day_values = cast(pd.Series, series.loc[day])
             hour_series = cast(pd.DatetimeIndex, day_values.index).to_series()

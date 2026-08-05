@@ -148,9 +148,7 @@ async def get_optimization(
 async def optimization_page(
     group: str,
     request: Request,
-    session: AsyncSession = Depends(get_session),
 ):
-    await _load_group(session, group)
     return templates.TemplateResponse(
         request,
         "optimization_group.html",

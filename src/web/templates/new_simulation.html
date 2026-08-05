@@ -193,7 +193,7 @@
 
 <script>
 (function () {
-  const textFields = new Set(['name', 'tz', 'load_source']);
+  const textFields = new Set(['name', 'tz', 'load_source', 'mode', 'capacities']);
   document.getElementById('sim-form').addEventListener('submit', async function (e) {
     e.preventDefault();
     const errorEl = document.getElementById('form-error');
@@ -216,7 +216,7 @@
     }
     delete data.load_source;
 
-    if (!form.querySelector('[name="battery_capacity_kwh"]').closest('fieldset').disabled) {
+    if (form.querySelector('[name="battery_capacity_kwh"]').closest('fieldset').disabled) {
       data.battery_capacity_kwh = null;
       data.battery_c_rate = null;
       data.battery_efficiency_pct = null;
@@ -260,7 +260,11 @@
         }
       } else {
         const err = await resp.json().catch(function () { return {}; });
-        errorEl.textContent = err.detail || 'Errore durante la creazione della simulazione.';
+        if (Array.isArray(err.detail)) {
+          errorEl.textContent = err.detail.map(function (d) { return d.msg; }).join('. ');
+        } else {
+          errorEl.textContent = err.detail || 'Errore durante la creazione della simulazione.';
+        }
         errorEl.hidden = false;
       }
     } catch (err) {

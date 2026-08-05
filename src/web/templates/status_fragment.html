@@ -40,13 +40,13 @@
     {% if figures.get("daily") %}
     <div class="card chart">
       <div id="chart-daily" data-plotly="chart-daily"></div>
-      <script type="application/json" id="chart-daily-json">{{ figures["daily"] }}</script>
+      <script type="application/json" id="chart-daily-json">{{ figures["daily"] | safe }}</script>
     </div>
     {% endif %}
     {% if figures.get("cashflow") %}
     <div class="card chart">
       <div id="chart-cashflow" data-plotly="chart-cashflow"></div>
-      <script type="application/json" id="chart-cashflow-json">{{ figures["cashflow"] }}</script>
+      <script type="application/json" id="chart-cashflow-json">{{ figures["cashflow"] | safe }}</script>
     </div>
     {% endif %}
   </section>
