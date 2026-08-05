@@ -93,11 +93,19 @@ pywebview (see `docs/adr/0004-desktop-pywebview.md`).
 - [x] **Milestone:** run end-to-end dal browser (login → form → job →
       polling HTMX → dashboard con grafici).
 
-## Phase 8 — Optimizer & battery scenarios
+## Phase 8 — Optimizer & battery scenarios (done)
 
-- `src/engine/optimizer.py`: sweep battery capacity, pick max IRR/NPV.
-- Manual scenario comparison in UI (multiple capacities).
-- **Milestone:** "ottimizza" button returns optimal capacity + metrics.
+- [x] `src/engine/optimizer.py`: `sweep_capacities()` — per ogni capacità
+      aggiusta investimento/sostituzione batteria (costo €/kWh) e ritorna gli
+      scenari ordinati per NPV discendente.
+- [x] `run_optimization` job: sweep in worker, una Simulation + full results
+      per ogni capacità, righe `optimization_scenarios` per il confronto;
+      curve scritte solo per lo scenario migliore.
+- [x] Tabella `optimization_scenarios` (migrazione Alembic).
+- [x] Confronto manuale in UI: form con toggle "Ottimizza" (sweep automatico
+      o elenco manuale di capacità, costi €/kWh), pagina
+      `/optimizations/{group}` con tabella comparativa e badge "migliore".
+- [x] **Milestone:** "ottimizza" restituisce capacità ottimale + metriche.
 
 ## Phase 9 — PDF report
 

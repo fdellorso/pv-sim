@@ -1,0 +1,59 @@
+<div id="opt-status"
+     {% if not data.done %}
+     hx-get="/optimizations/{{ data.optimization_group }}/status"
+     hx-trigger="every 3s"
+     hx-swap="outerHTML"
+     {% endif %}>
+
+  {% if not data.done %}
+  <div class="card">
+    <p><strong>Stato:</strong> <span class="badge badge-running">in corso</span>
+      <span class="spinner"></span></p>
+    <p class="muted">Scenario {{ data.completed }} / {{ data.total }} completati
+      ({% if data.failed %}{{ data.failed }} falliti, {% endif %}gli altri in coda)…</p>
+  </div>
+  {% endif %}
+
+  <section class="card">
+    <h2>{{ data.title }}</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Capacità (kWh)</th>
+            <th>NPV (€)</th>
+            <th>IRR (%)</th>
+            <th>Payback</th>
+            <th>Autoconsumo %</th>
+            <th>Autosufficienza %</th>
+            <th>Stato</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in data.scenarios %}
+          <tr class="{% if data.best and s.simulation_id == data.best.simulation_id %}row-best{% endif %}">
+            <td>{{ "%.1f"|format(s.capacity_kwh) }}
+              {% if data.best and s.simulation_id == data.best.simulation_id %}<span class="badge badge-best">migliore</span>{% endif %}
+            </td>
+            <td>{{ "%.0f"|format(s.npv_eur) if s.npv_eur is not none else "—" }}</td>
+            <td>{{ "%.1f"|format(s.irr_pct) if s.irr_pct is not none else "—" }}</td>
+            <td>{{ "anno %.0f"|format(s.payback_years) if s.payback_years else "—" }}</td>
+            <td>{{ "%.1f"|format(s.autoconsumo_pct) if s.autoconsumo_pct is not none else "—" }}</td>
+            <td>{{ "%.1f"|format(s.autosufficienza_pct) if s.autosufficienza_pct is not none else "—" }}</td>
+            <td>
+              <span class="badge badge-{{ s.status }}">{{ s.status }}</span>
+              {% if s.error_message %}<span class="error"> {{ s.error_message }}</span>{% endif %}
+            </td>
+            <td>
+              {% if s.status == "completed" %}
+              <a href="/simulations/{{ s.simulation_id }}">dashboard</a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

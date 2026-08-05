@@ -139,3 +139,22 @@ class SimulationMetrics(Base):
     total_autoconsumo_pct: Mapped[float] = mapped_column(Float)
     total_autosufficienza_pct: Mapped[float] = mapped_column(Float)
     battery_cycles_total: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+
+class OptimizationScenario(Base):
+    __tablename__ = "optimization_scenarios"
+    __table_args__ = (
+        UniqueConstraint("optimization_group", "simulation_id", name="uq_optimization_group_sim"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    optimization_group: Mapped[str] = mapped_column(Text, index=True)
+    simulation_id: Mapped[int] = mapped_column(
+        ForeignKey("simulations.id", ondelete="CASCADE"), index=True
+    )
+    capacity_kwh: Mapped[float] = mapped_column(Float)
+    npv_eur: Mapped[float | None] = mapped_column(Float, nullable=True)
+    irr_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    payback_years: Mapped[float | None] = mapped_column(Float, nullable=True)
+    autoconsumo_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    autosufficienza_pct: Mapped[float | None] = mapped_column(Float, nullable=True)

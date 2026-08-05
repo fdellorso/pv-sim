@@ -3,7 +3,7 @@
 {% block content %}
 <h1>Nuova simulazione</h1>
 
-<form id="sim-form" x-data="{ battery: false, loadSource: 'synthetic' }">
+<form id="sim-form" x-data="{ battery: false, loadSource: 'synthetic', optimize: false, optMode: 'sweep' }">
   <section class="card">
     <h2>Identificazione</h2>
     <div class="form-grid">
@@ -147,6 +147,46 @@
     </div>
   </section>
 
+  <section class="card">
+    <h2>Ottimizza capacità batteria
+      <label class="switch"><input type="checkbox" id="optimize-toggle" name="optimize" x-model="optimize"> attiva</label>
+    </h2>
+    <template x-if="optimize">
+      <div>
+        <p class="muted">Confronta più capacità batteria in un unico run e trova la migliore.
+          In questa modalità il campo "Investimento" è il costo dell'impianto FV senza batteria.</p>
+        <div class="radio-row">
+          <label><input type="radio" name="mode" value="sweep" x-model="optMode" checked> Sweep automatico</label>
+          <label><input type="radio" name="mode" value="manual" x-model="optMode"> Elenco manuale</label>
+        </div>
+        <div class="form-grid" x-show="optMode === 'sweep'">
+          <label>Capacità min (kWh)
+            <input type="number" name="min_capacity" step="any" value="0">
+          </label>
+          <label>Capacità max (kWh)
+            <input type="number" name="max_capacity" step="any" value="20">
+          </label>
+          <label>Passo (kWh)
+            <input type="number" name="step" step="any" value="2.5">
+          </label>
+        </div>
+        <div class="form-grid" x-show="optMode === 'manual'">
+          <label>Capacità (kWh, separate da virgola)
+            <input type="text" name="capacities" placeholder="0, 5, 10, 15">
+          </label>
+        </div>
+        <div class="form-grid">
+          <label>Costo batteria (€/kWh)
+            <input type="number" name="battery_cost_eur_per_kwh" step="any" value="600">
+          </label>
+          <label>Costo sostituzione batteria (€/kWh)
+            <input type="number" name="battery_replace_eur_per_kwh" step="any" value="400">
+          </label>
+        </div>
+      </div>
+    </template>
+  </section>
+
   <p id="form-error" class="error" hidden></p>
   <button type="submit" class="btn btn-primary btn-lg">Avvia simulazione</button>
 </form>
@@ -191,15 +231,33 @@
       data.loan_interest_pct = null;
     }
 
+    const optimizeOn = !!form.querySelector('#optimize-toggle').checked;
+    const batteryFields = ['battery_capacity_kwh', 'battery_c_rate', 'battery_efficiency_pct',
+      'battery_soc_min_pct', 'battery_soc_max_pct', 'battery_replace_at_year',
+      'battery_replacement_cost_eur'];
+    if (optimizeOn) {
+      batteryFields.forEach(function (k) { data[k] = null; });
+    } else {
+      ['mode', 'min_capacity', 'max_capacity', 'step', 'capacities',
+        'battery_cost_eur_per_kwh', 'battery_replace_eur_per_kwh', 'optimize'
+      ].forEach(function (k) { delete data[k]; });
+    }
+
+    const endpoint = optimizeOn ? '/api/optimizations' : '/api/simulations';
+
     try {
-      const resp = await fetch('/api/simulations', {
+      const resp = await fetch(endpoint, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(data),
       });
       if (resp.ok) {
         const out = await resp.json();
-        window.location.href = '/simulations/' + out.id;
+        if (optimizeOn) {
+          window.location.href = '/optimizations/' + out.optimization_group;
+        } else {
+          window.location.href = '/simulations/' + out.id;
+        }
       } else {
         const err = await resp.json().catch(function () { return {}; });
         errorEl.textContent = err.detail || 'Errore durante la creazione della simulazione.';

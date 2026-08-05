@@ -9,15 +9,23 @@ from pathlib import Path
 from typing import cast
 
 import pandas as pd
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.engine.battery_model import BatteryParams
 from src.engine.economic_model import EconomicParams, EconomicResult, run_economics
 from src.engine.load_model import generate_synthetic_curve, load_curve_from_csv
+from src.engine.optimizer import ScenarioResult, sweep_capacities
 from src.engine.pv_model import PVSystemParams, run_pv_model
 from src.engine.weather import get_weather
 from src.web.config import get_settings
-from src.web.models import LoadProfile, Simulation, SimulationMetrics, SimulationResult
+from src.web.models import (
+    LoadProfile,
+    OptimizationScenario,
+    Simulation,
+    SimulationMetrics,
+    SimulationResult,
+)
 
 DT_HOURS = 0.25
 
@@ -29,12 +37,11 @@ class PipelineResult:
     load_year1: pd.Series
 
 
-def _run_pipeline(sim: Simulation, load_profile: LoadProfile | None) -> PipelineResult:
-    """Run the engine pipeline (weather → pv → load → battery → economics).
-
-    Pure synchronous computation; CPU-heavy work is offloaded to a thread by
-    the caller. Reads only plain attributes from the ORM objects.
-    """
+def _build_base_inputs(
+    sim: Simulation,
+    load_profile: LoadProfile | None,
+) -> tuple[pd.Series, pd.Series, EconomicParams, BatteryParams]:
+    """Build the year-1 PV/load series and the base economic/battery params."""
     weather = get_weather(sim.lat, sim.lon, sim.tz)
     pv = run_pv_model(
         weather,
@@ -79,6 +86,16 @@ def _run_pipeline(sim: Simulation, load_profile: LoadProfile | None) -> Pipeline
         loan_years=sim.loan_years,
         pv_degradation_pct_year=sim.pv_degradation_pct_year,
     )
+    return pv, load, economic, battery
+
+
+def _run_pipeline(sim: Simulation, load_profile: LoadProfile | None) -> PipelineResult:
+    """Run the engine pipeline (weather → pv → load → battery → economics).
+
+    Pure synchronous computation; CPU-heavy work is offloaded to a thread by
+    the caller. Reads only plain attributes from the ORM objects.
+    """
+    pv, load, economic, battery = _build_base_inputs(sim, load_profile)
     return PipelineResult(
         economic=run_economics(pv, load, economic, battery, DT_HOURS),
         pv_year1=pv,
@@ -184,3 +201,95 @@ def _write_curves(simulation_id: int, pv: pd.Series, load: pd.Series) -> None:
 
     (data_dir / "pv_year1.json").write_text(json.dumps(serialize(pv)))
     (data_dir / "load_year1.json").write_text(json.dumps(serialize(load)))
+
+
+async def run_optimization(ctx: dict, payload: dict) -> dict[str, object]:
+    """Sweep battery capacities for a set of simulation parameters.
+
+    Creates one ``Simulation`` row per capacity plus the
+    ``OptimizationScenario`` rows used by the comparison page. ``payload``
+    holds the validated simulation parameters and the optimizer config
+    (``capacities``, battery costs, ``optimization_group`` UUID).
+    """
+    sim_params: dict = payload["simulation"]
+    group = str(payload["optimization_group"])
+    capacities: list[float] = [float(c) for c in payload["capacities"]]
+    cost_per_kwh = float(payload["battery_cost_eur_per_kwh"])
+    replace_per_kwh = float(payload["battery_replace_eur_per_kwh"])
+
+    session_factory: async_sessionmaker[AsyncSession] = ctx["db_session"]
+    async with session_factory() as session:
+        simulations: list[tuple[Simulation, float]] = []
+        for capacity in capacities:
+            sim = Simulation(**sim_params)
+            sim.name = f"{sim_params.get('name', 'Ottimizzazione')} — {capacity:g} kWh"
+            session.add(sim)
+            await session.flush()
+            session.add(
+                OptimizationScenario(
+                    optimization_group=group,
+                    simulation_id=sim.id,
+                    capacity_kwh=capacity,
+                )
+            )
+            simulations.append((sim, capacity))
+        await session.commit()
+
+        template = Simulation(**sim_params)
+        load_profile = None
+        if template.load_profile_id is not None:
+            load_profile = await session.get(LoadProfile, template.load_profile_id)
+
+        try:
+            pv, load, economic, battery = await asyncio.to_thread(
+                _build_base_inputs, template, load_profile
+            )
+            results: list[ScenarioResult] = await asyncio.to_thread(
+                sweep_capacities,
+                pv,
+                load,
+                economic,
+                battery,
+                capacities,
+                cost_per_kwh,
+                replace_per_kwh,
+            )
+        except Exception as exc:  # noqa: BLE001
+            for sim, _capacity in simulations:
+                sim.status = "failed"
+                sim.error_message = str(exc)
+            await session.commit()
+            raise
+
+        results_by_capacity = {r.capacity_kwh: r for r in results}
+        best_capacity = results[0].capacity_kwh if results else None
+
+        for sim, capacity in simulations:
+            scenario = (
+                await session.execute(
+                    select(OptimizationScenario).where(
+                        OptimizationScenario.simulation_id == sim.id
+                    )
+                )
+            ).scalar_one()
+            result = results_by_capacity.get(capacity)
+            if result is None:
+                sim.status = "failed"
+                sim.error_message = "Scenario non calcolato"
+                await session.commit()
+                continue
+
+            sim.status = "completed"
+            sim.battery_capacity_kwh = capacity
+            session.add_all(_to_result_rows(sim.id, result.economic))
+            session.add(_to_metrics(sim.id, result.economic))
+            scenario.npv_eur = result.npv_eur
+            scenario.irr_pct = result.irr_pct
+            scenario.payback_years = result.payback_years
+            scenario.autoconsumo_pct = result.autoconsumo_pct
+            scenario.autosufficienza_pct = result.autosufficienza_pct
+            await session.commit()
+            if best_capacity is not None and capacity == best_capacity:
+                _write_curves(sim.id, pv, load)
+
+    return {"optimization_group": group, "scenarios": len(capacities)}

@@ -12,6 +12,8 @@ from src.web.auth import SESSION_COOKIE, verify_session_token
 from src.web.config import get_settings
 from src.web.routes.auth import router as auth_router
 from src.web.routes.load_profiles import router as load_profiles_router
+from src.web.routes.optimizations import api_router as optimizations_api_router
+from src.web.routes.optimizations import page_router as optimizations_page_router
 from src.web.routes.pages import router as pages_router
 from src.web.routes.simulations import api_router as simulations_api_router
 from src.web.routes.simulations import page_router as simulations_page_router
@@ -62,6 +64,8 @@ app.include_router(pages_router)
 app.include_router(load_profiles_router)
 app.include_router(simulations_api_router)
 app.include_router(simulations_page_router)
+app.include_router(optimizations_api_router)
+app.include_router(optimizations_page_router)
 
 
 @app.get("/health")

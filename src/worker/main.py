@@ -7,7 +7,7 @@ from arq.connections import RedisSettings
 
 from src.web.config import get_settings
 from src.web.database import async_session, engine
-from src.worker.jobs import run_simulation
+from src.worker.jobs import run_optimization, run_simulation
 
 
 async def on_startup(ctx: dict) -> None:
@@ -19,7 +19,7 @@ async def on_shutdown(ctx: dict) -> None:
 
 
 class WorkerSettings:
-    functions = [run_simulation]
+    functions = [run_simulation, run_optimization]
     redis_settings = RedisSettings.from_dsn(get_settings().redis_url)
     max_jobs = 1
     job_timeout = 3600

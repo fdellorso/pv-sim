@@ -118,6 +118,9 @@ tr:hover td { background: #f8fafc; }
 .badge-queued, .badge-running { background: #fef3c7; color: #92400e; }
 .badge-completed { background: #dcfce7; color: #166534; }
 .badge-failed { background: #fee2e2; color: #991b1b; }
+.badge-best { background: #dbeafe; color: #1e40af; }
+.row-best td { background: #eff6ff; }
+.row-best:hover td { background: #eff6ff; }
 
 .spinner {
   display: inline-block;
