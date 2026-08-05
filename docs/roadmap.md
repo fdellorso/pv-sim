@@ -107,11 +107,17 @@ pywebview (see `docs/adr/0004-desktop-pywebview.md`).
       `/optimizations/{group}` con tabella comparativa e badge "migliore".
 - [x] **Milestone:** "ottimizza" restituisce capacità ottimale + metriche.
 
-## Phase 9 — PDF report
+## Phase 9 — PDF report (done)
 
-- `src/engine/report.py`: generate PDF report (WeasyPrint) from results.
-- Download link in dashboard.
-- **Milestone:** report PDF downloadable.
+- [x] `src/web/report.py`: `build_report_pdf()` — HTML standalone renderizzato
+      con Jinja2 → WeasyPrint; grafici giorni-tipo e cashflow come PNG via
+      matplotlib (niente kaleido/Chrome). `src/engine/report.py` resta uno
+      stub con rimando (il report è una web concern).
+- [x] `GET /api/simulations/{id}/report.pdf` — PDF scaricabile (404 se
+      inesistente, 409 se non completata).
+- [x] Link "Scarica report PDF" nel dashboard; Dockerfile con le librerie di
+      sistema di WeasyPrint (pango/cairo/glib/gdk-pixbuf + font DejaVu).
+- [x] **Milestone:** report PDF scaricabile.
 
 ## Phase 10 — Polish & hardening
 

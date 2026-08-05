@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <style>
+    @page {
+      size: A4;
+      margin: 1.8cm;
+      @bottom-center { content: "PV-Sim — report di simulazione"; font-size: 8pt; color: #94a3b8; }
+    }
+    body { font-family: 'DejaVu Sans', sans-serif; color: #0f172a; font-size: 10pt; }
+    h1 { font-size: 18pt; margin: 0 0 2px 0; }
+    .muted { color: #64748b; font-size: 9pt; }
+    .kpis { margin: 16px 0; }
+    .kpi {
+      display: inline-block;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 16px;
+      margin-right: 8px;
+      text-align: center;
+    }
+    .kpi .v { font-size: 14pt; font-weight: bold; }
+    .kpi .l { font-size: 8pt; color: #64748b; }
+    h2 { font-size: 12pt; border-bottom: 1px solid #e2e8f0; padding-bottom: 3px; margin-top: 18px; }
+    table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+    th, td { border: 1px solid #e2e8f0; padding: 3px 6px; text-align: right; }
+    th { background: #f1f5f9; }
+    th:first-child, td:first-child { text-align: left; }
+    img.chart { width: 100%; margin-top: 6px; }
+    .params td { text-align: left; }
+    .params td:first-child { font-weight: bold; width: 30%; }
+  </style>
+</head>
+<body>
+  <h1>Report simulazione — {{ name }}</h1>
+  <div class="muted">Generato il {{ generated_at }} · PV-Sim</div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="v">{{ "%.0f"|format(metrics.npv_eur) }} €</div><div class="l">NPV</div></div>
+    <div class="kpi"><div class="v">{{ "%.1f"|format(metrics.irr_pct) }} %</div><div class="l">IRR</div></div>
+    <div class="kpi"><div class="v">anno {{ "%.0f"|format(metrics.payback_years) if metrics.payback_years else "—" }}</div><div class="l">Payback</div></div>
+    <div class="kpi"><div class="v">{{ "%.1f"|format(metrics.total_autoconsumo_pct) }} %</div><div class="l">Autoconsumo medio</div></div>
+    <div class="kpi"><div class="v">{{ "%.1f"|format(metrics.total_autosufficienza_pct) }} %</div><div class="l">Autosufficienza media</div></div>
+  </div>
+
+  <h2>Parametri</h2>
+  <table class="params">
+    <tr><td>Luogo</td><td>{{ "%.4f"|format(sim.lat) }}, {{ "%.4f"|format(sim.lon) }} ({{ sim.tz }})</td></tr>
+    <tr><td>Campo fotovoltaico</td><td>{{ sim.pv_power_kw }} kWp · tilt {{ "%.0f"|format(sim.tilt) }}° · azimuth {{ "%.0f"|format(sim.azimuth) }}° · inverter {{ sim.inverter_power_kw }} kW · perdite {{ "%.0f"|format(sim.system_losses_pct) }}%</td></tr>
+    <tr>
+      <td>Batteria</td>
+      <td>{% if sim.battery_capacity_kwh %}{{ sim.battery_capacity_kwh }} kWh @ {{ sim.battery_c_rate }}C · SOC {{ "%.0f"|format(sim.battery_soc_min_pct) }}–{{ "%.0f"|format(sim.battery_soc_max_pct) }}%{% else %}assente{% endif %}</td>
+    </tr>
+    <tr><td>Consumo</td><td>{% if sim.annual_consumption_kwh %}{{ sim.annual_consumption_kwh }} kWh/anno (sintetico){% else %}profilo reale{% endif %}</td></tr>
+    <tr><td>Tariffe</td><td>acquisto {{ "%.3f"|format(sim.purchase_eur_kwh) }} €/kWh · vendita {{ "%.3f"|format(sim.sell_eur_kwh) }} €/kWh</td></tr>
+    <tr><td>Economia</td><td>orizzonte {{ sim.horizon_years }} anni · investimento {{ "%.0f"|format(sim.investment_cost_eur) }} €{% if sim.loan_years %} · prestito {{ sim.loan_years }} anni @ {{ sim.loan_interest_pct }}%{% endif %}</td></tr>
+  </table>
+
+  {% if daily_png %}
+  <h2>Produzione e carico — giorni tipo</h2>
+  <img class="chart" src="data:image/png;base64,{{ daily_png }}" alt="Curve giorno tipo">
+  {% endif %}
+
+  {% if cashflow_png %}
+  <h2>Cashflow annuale</h2>
+  <img class="chart" src="data:image/png;base64,{{ cashflow_png }}" alt="Cashflow">
+  {% endif %}
+
+  <h2>Andamento annuale</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Anno</th>
+        <th>Produzione (kWh)</th>
+        <th>Autoconsumo %</th>
+        <th>Autosufficienza %</th>
+        <th>Immissione (kWh)</th>
+        <th>Prelievo (kWh)</th>
+        <th>Netto (€)</th>
+        <th>Cumulativo (€)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in results %}
+      <tr>
+        <td>{{ r.year }}</td>
+        <td>{{ "%.0f"|format(r.pv_production_kwh) }}</td>
+        <td>{{ "%.1f"|format(r.self_consumption_pct) }}</td>
+        <td>{{ "%.1f"|format(r.autosufficienza_pct) }}</td>
+        <td>{{ "%.0f"|format(r.grid_export_kwh) }}</td>
+        <td>{{ "%.0f"|format(r.grid_import_kwh) }}</td>
+        <td>{{ "%.0f"|format(r.net_cashflow_eur) }}</td>
+        <td>{{ "%.0f"|format(r.cumulative_cashflow_eur) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

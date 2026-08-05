@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+import asyncio
+
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.web.charts import cashflow_figure, daily_curves_figure, read_curves
 from src.web.database import get_session
 from src.web.models import LoadProfile, Simulation, SimulationMetrics, SimulationResult
+from src.web.report import build_report_pdf
 from src.web.templating import templates
 
 api_router = APIRouter(prefix="/api/simulations", tags=["simulations"])
@@ -103,6 +106,32 @@ async def _load_results(session: AsyncSession, simulation_id: int) -> tuple[Simu
         )
     ).scalars().all()
     return metrics, list(rows)
+
+
+@api_router.get("/{simulation_id}/report.pdf")
+async def download_report(
+    simulation_id: int,
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Return the simulation report as a PDF attachment."""
+    sim = await session.get(Simulation, simulation_id)
+    if sim is None:
+        raise HTTPException(status_code=404, detail="simulation not found")
+    if sim.status != "completed":
+        raise HTTPException(status_code=409, detail="simulation not completed")
+
+    metrics, rows = await _load_results(session, simulation_id)
+    if metrics is None:
+        raise HTTPException(status_code=409, detail="simulation not completed")
+
+    curves = read_curves(simulation_id)
+    pdf = await asyncio.to_thread(build_report_pdf, sim, metrics, rows, curves)
+    filename = f"report_{simulation_id}.pdf"
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @api_router.post("", status_code=202)

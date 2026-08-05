@@ -27,6 +27,8 @@
     <div class="kpi"><span class="kpi-value">{{ "%.1f"|format(metrics.total_autosufficienza_pct) }} %</span><span class="kpi-label">Autosufficienza media</span></div>
   </section>
 
+  <p><a class="btn btn-primary" href="/api/simulations/{{ simulation.id }}/report.pdf">Scarica report PDF</a></p>
+
   <section class="charts">
     {% if figures.get("daily") %}
     <div class="card chart">
