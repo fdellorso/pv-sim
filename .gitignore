@@ -15,3 +15,6 @@ wheels/
 
 # Load profile archives (raw CSV)
 data/load_profiles/*.csv
+
+# Persisted simulation curves (runtime data)
+data/simulation_data/

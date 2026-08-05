@@ -2,21 +2,18 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.web.charts import cashflow_figure, daily_curves_figure, read_curves
 from src.web.database import get_session
 from src.web.models import LoadProfile, Simulation, SimulationMetrics, SimulationResult
+from src.web.templating import templates
 
 api_router = APIRouter(prefix="/api/simulations", tags=["simulations"])
 page_router = APIRouter(tags=["pages"])
-
-templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
 
 
 class SimulationCreate(BaseModel):
@@ -158,7 +155,7 @@ async def simulation_status_page(
     request: Request,
     session: AsyncSession = Depends(get_session),
 ):
-    """Minimal HTML page for the status polling round-trip."""
+    """Dashboard page: polls the status fragment until the job completes."""
     sim = await session.get(Simulation, simulation_id)
     if sim is None:
         raise HTTPException(status_code=404, detail="simulation not found")
@@ -175,14 +172,29 @@ async def simulation_status_fragment(
     request: Request,
     session: AsyncSession = Depends(get_session),
 ):
-    """HTMX-pollable fragment showing the job status and final summary."""
+    """HTMX-pollable fragment: spinner while running, dashboard once complete."""
     sim = await session.get(Simulation, simulation_id)
     if sim is None:
         raise HTTPException(status_code=404, detail="simulation not found")
 
     metrics, rows = await _load_results(session, simulation_id)
+
+    figures: dict[str, str] = {}
+    if sim.status == "completed" and metrics is not None:
+        curves = read_curves(simulation_id)
+        if curves is not None:
+            pv, load = curves
+            figures["daily"] = daily_curves_figure(pv, load).to_json()
+        if rows:
+            figures["cashflow"] = cashflow_figure(rows).to_json()
+
     return templates.TemplateResponse(
         request,
         "status_fragment.html",
-        {"simulation": sim, "metrics": metrics, "results": rows},
+        {
+            "simulation": sim,
+            "metrics": metrics,
+            "results": rows,
+            "figures": figures,
+        },
     )

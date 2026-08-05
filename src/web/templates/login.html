@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Login — PV-Sim{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <h1>PV-Sim</h1>
+  <p class="muted">Accedi per continuare</p>
+  <form method="post" action="/login" class="stack">
+    <input type="hidden" name="next" value="{{ next }}">
+    <label for="password">Password</label>
+    <input type="password" id="password" name="password" autofocus required>
+    {% if error %}
+      <p class="error">Password non corretta.</p>
+    {% endif %}
+    <button type="submit" class="btn btn-primary">Accedi</button>
+  </form>
+</div>
+{% endblock %}

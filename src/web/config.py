@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://redis:6379/0"
 
     load_profiles_dir: str = "/data/load_profiles"
+    simulation_data_dir: str = "/data/simulation_data"
 
 
 @lru_cache

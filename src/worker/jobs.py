@@ -3,7 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+import json
+from dataclasses import dataclass
+from pathlib import Path
+from typing import cast
 
+import pandas as pd
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.engine.battery_model import BatteryParams
@@ -11,12 +16,20 @@ from src.engine.economic_model import EconomicParams, EconomicResult, run_econom
 from src.engine.load_model import generate_synthetic_curve, load_curve_from_csv
 from src.engine.pv_model import PVSystemParams, run_pv_model
 from src.engine.weather import get_weather
+from src.web.config import get_settings
 from src.web.models import LoadProfile, Simulation, SimulationMetrics, SimulationResult
 
 DT_HOURS = 0.25
 
 
-def _run_pipeline(sim: Simulation, load_profile: LoadProfile | None) -> EconomicResult:
+@dataclass
+class PipelineResult:
+    economic: EconomicResult
+    pv_year1: pd.Series
+    load_year1: pd.Series
+
+
+def _run_pipeline(sim: Simulation, load_profile: LoadProfile | None) -> PipelineResult:
     """Run the engine pipeline (weather → pv → load → battery → economics).
 
     Pure synchronous computation; CPU-heavy work is offloaded to a thread by
@@ -66,7 +79,11 @@ def _run_pipeline(sim: Simulation, load_profile: LoadProfile | None) -> Economic
         loan_years=sim.loan_years,
         pv_degradation_pct_year=sim.pv_degradation_pct_year,
     )
-    return run_economics(pv, load, economic, battery, DT_HOURS)
+    return PipelineResult(
+        economic=run_economics(pv, load, economic, battery, DT_HOURS),
+        pv_year1=pv,
+        load_year1=load,
+    )
 
 
 def _to_result_rows(simulation_id: int, economic: EconomicResult) -> list[SimulationResult]:
@@ -132,16 +149,38 @@ async def run_simulation(ctx: dict, simulation_id: int) -> dict[str, object]:
         await session.commit()
 
         try:
-            economic = await asyncio.to_thread(_run_pipeline, sim, load_profile)
+            pipeline = await asyncio.to_thread(_run_pipeline, sim, load_profile)
         except Exception as exc:  # noqa: BLE001 — any failure marks the job failed
             sim.status = "failed"
             sim.error_message = str(exc)
             await session.commit()
             raise
 
-        session.add_all(_to_result_rows(simulation_id, economic))
-        session.add(_to_metrics(simulation_id, economic))
+        _write_curves(simulation_id, pipeline.pv_year1, pipeline.load_year1)
+        session.add_all(_to_result_rows(simulation_id, pipeline.economic))
+        session.add(_to_metrics(simulation_id, pipeline.economic))
         sim.status = "completed"
         await session.commit()
 
     return {"simulation_id": simulation_id, "status": "completed"}
+
+
+def _write_curves(simulation_id: int, pv: pd.Series, load: pd.Series) -> None:
+    """Persist the year-1 15-minute series as JSON for the dashboard charts."""
+    data_dir = Path(get_settings().simulation_data_dir) / str(simulation_id)
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    def serialize(series: pd.Series) -> dict:
+        index = cast(pd.DatetimeIndex, series.index)
+        start = cast(pd.Timestamp, index[0])
+        if index.tz is not None:
+            start = start.tz_localize(None)
+        return {
+            "start": str(start),
+            "freq": "15min",
+            "tz": str(index.tz) if index.tz is not None else None,
+            "values": [float(v) for v in series.to_numpy()],
+        }
+
+    (data_dir / "pv_year1.json").write_text(json.dumps(serialize(pv)))
+    (data_dir / "load_year1.json").write_text(json.dumps(serialize(load)))

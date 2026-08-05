@@ -4,36 +4,78 @@
      hx-trigger="every 2s"
      hx-swap="outerHTML"
      {% endif %}>
-  <p><strong>Stato:</strong> <span class="status status-{{ simulation.status }}">{{ simulation.status }}</span></p>
-  {% if simulation.error_message %}
+
+  {% if simulation.status in ("queued", "running") %}
+  <div class="card">
+    <p><strong>Stato:</strong> <span class="badge badge-{{ simulation.status }}">{{ simulation.status }}</span>
+      <span class="spinner"></span></p>
+    <p class="muted">Simulazione in esecuzione… la pagina si aggiorna automaticamente.</p>
+  </div>
+
+  {% elif simulation.status == "failed" %}
+  <div class="card card-error">
+    <p><strong>Stato:</strong> <span class="badge badge-failed">failed</span></p>
     <p class="error">Errore: {{ simulation.error_message }}</p>
-  {% endif %}
-  {% if metrics %}
-    <ul>
-      <li>NPV: {{ "%.0f"|format(metrics.npv_eur) }} EUR</li>
-      <li>IRR: {{ "%.1f"|format(metrics.irr_pct) }} %</li>
-      <li>Payback: anno {{ metrics.payback_years }}</li>
-      <li>Autoconsumo medio: {{ "%.1f"|format(metrics.total_autoconsumo_pct) }} %</li>
-      <li>Autosufficienza media: {{ "%.1f"|format(metrics.total_autosufficienza_pct) }} %</li>
-    </ul>
-    <h2>Annuo</h2>
-    <table>
-      <thead>
-        <tr><th>Anno</th><th>Produzione (kWh)</th><th>Autoconsumo %</th>
-            <th>Autosufficienza %</th><th>Net CF (EUR)</th><th>Cumulativo (EUR)</th></tr>
-      </thead>
-      <tbody>
-        {% for row in results %}
-        <tr>
-          <td>{{ row.year }}</td>
-          <td>{{ "%.0f"|format(row.pv_production_kwh) }}</td>
-          <td>{{ "%.1f"|format(row.self_consumption_pct) }}</td>
-          <td>{{ "%.1f"|format(row.autosufficienza_pct) }}</td>
-          <td>{{ "%.0f"|format(row.net_cashflow_eur) }}</td>
-          <td>{{ "%.0f"|format(row.cumulative_cashflow_eur) }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  </div>
+
+  {% elif metrics %}
+  <section class="kpis">
+    <div class="kpi"><span class="kpi-value">{{ "%.0f"|format(metrics.npv_eur) }} €</span><span class="kpi-label">NPV</span></div>
+    <div class="kpi"><span class="kpi-value">{{ "%.1f"|format(metrics.irr_pct) }} %</span><span class="kpi-label">IRR</span></div>
+    <div class="kpi"><span class="kpi-value">anno {{ "%.0f"|format(metrics.payback_years) if metrics.payback_years else "—" }}</span><span class="kpi-label">Payback</span></div>
+    <div class="kpi"><span class="kpi-value">{{ "%.1f"|format(metrics.total_autoconsumo_pct) }} %</span><span class="kpi-label">Autoconsumo medio</span></div>
+    <div class="kpi"><span class="kpi-value">{{ "%.1f"|format(metrics.total_autosufficienza_pct) }} %</span><span class="kpi-label">Autosufficienza media</span></div>
+  </section>
+
+  <section class="charts">
+    {% if figures.get("daily") %}
+    <div class="card chart">
+      <div id="chart-daily" data-plotly="chart-daily"></div>
+      <script type="application/json" id="chart-daily-json">{{ figures["daily"] }}</script>
+    </div>
+    {% endif %}
+    {% if figures.get("cashflow") %}
+    <div class="card chart">
+      <div id="chart-cashflow" data-plotly="chart-cashflow"></div>
+      <script type="application/json" id="chart-cashflow-json">{{ figures["cashflow"] }}</script>
+    </div>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Andamento annuale</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Anno</th>
+            <th>Produzione (kWh)</th>
+            <th>Consumo (kWh)</th>
+            <th>Autoconsumo %</th>
+            <th>Autosufficienza %</th>
+            <th>Immissione (kWh)</th>
+            <th>Prelievo (kWh)</th>
+            <th>Net CF (€)</th>
+            <th>Cumulativo (€)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in results %}
+          <tr>
+            <td>{{ row.year }}</td>
+            <td>{{ "%.0f"|format(row.pv_production_kwh) }}</td>
+            <td>{{ "%.0f"|format(row.load_consumption_kwh) }}</td>
+            <td>{{ "%.1f"|format(row.self_consumption_pct) }}</td>
+            <td>{{ "%.1f"|format(row.autosufficienza_pct) }}</td>
+            <td>{{ "%.0f"|format(row.grid_export_kwh) }}</td>
+            <td>{{ "%.0f"|format(row.grid_import_kwh) }}</td>
+            <td>{{ "%.0f"|format(row.net_cashflow_eur) }}</td>
+            <td>{{ "%.0f"|format(row.cumulative_cashflow_eur) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
   {% endif %}
 </div>

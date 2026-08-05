@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}PV-Sim{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <script src="https://unpkg.com/alpinejs@3.14.8" defer></script>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script>
+    function renderPlots(scope) {
+      (scope || document).querySelectorAll('[data-plotly]').forEach(function (div) {
+        const specEl = document.getElementById(div.dataset.plotly + '-json');
+        if (specEl && !div.dataset.rendered) {
+          try {
+            const spec = JSON.parse(specEl.textContent);
+            Plotly.newPlot(div.id, spec.data, spec.layout, {responsive: true});
+            div.dataset.rendered = '1';
+          } catch (e) {
+            console.error('plotly render failed', e);
+          }
+        }
+      });
+    }
+    document.addEventListener('DOMContentLoaded', function () { renderPlots(); });
+    document.addEventListener('htmx:afterSwap', function () { renderPlots(); });
+  </script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header class="topbar">
+    <span class="brand">PV-Sim</span>
+    <nav>
+      <a href="/new">Nuova simulazione</a>
+      <form action="/logout" method="post" class="inline">
+        <button type="submit" class="link-btn">Esci</button>
+      </form>
+    </nav>
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

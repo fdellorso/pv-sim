@@ -80,13 +80,18 @@ pywebview (see `docs/adr/0004-desktop-pywebview.md`).
       (`GET /simulations/{id}/status`).
 - [x] **Milestone:** full job round-trip web → redis → worker → postgres → web.
 
-## Phase 7 — Web UI: forms & dashboard
+## Phase 7 — Web UI: forms & dashboard (done)
 
-- SPA shell (`base.html`, Alpine.js), navigation, single-password auth.
-- Parameter form → creates simulation, enqueues job.
-- Result dashboard: KPI cards, Plotly charts (production/load day-type,
-  cashflow), annual table.
-- **Milestone:** end-to-end run from browser.
+- [x] SPA shell (`base.html`, Alpine.js, HTMX), navigazione, auth a password
+      singola (cookie HMAC firmato, middleware).
+- [x] Form parametri (`/new`) → crea simulazione + enqueue via
+      `POST /api/simulations`.
+- [x] Dashboard risultati: KPI card, grafici Plotly (produzione/carico su
+      giorni tipo inverno/estate, cashflow netto+cumulativo), tabella annuale.
+      Il worker persiste le curve year-1 su disco
+      (`data/simulation_data/{id}/`) per i grafici.
+- [x] **Milestone:** run end-to-end dal browser (login → form → job →
+      polling HTMX → dashboard con grafici).
 
 ## Phase 8 — Optimizer & battery scenarios
 

@@ -46,6 +46,7 @@ services:
       APP_SECRET_KEY: ${APP_SECRET_KEY:-change-me}
     volumes:
       - ./data/load_profiles:/data/load_profiles
+      - ./data/simulation_data:/data/simulation_data
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -60,6 +61,7 @@ services:
       REDIS_URL: redis://redis:6379/0
     volumes:
       - ./data/load_profiles:/data/load_profiles
+      - ./data/simulation_data:/data/simulation_data
     depends_on:
       migrate:
         condition: service_completed_successfully

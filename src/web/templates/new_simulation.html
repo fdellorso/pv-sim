@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}Nuova simulazione — PV-Sim{% endblock %}
+{% block content %}
+<h1>Nuova simulazione</h1>
+
+<form id="sim-form" x-data="{ battery: false, loadSource: 'synthetic' }">
+  <section class="card">
+    <h2>Identificazione</h2>
+    <div class="form-grid">
+      <label>Nome
+        <input type="text" name="name" value="Simulazione" required>
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Luogo</h2>
+    <div class="form-grid">
+      <label>Latitudine
+        <input type="number" name="lat" step="any" value="41.9" required>
+      </label>
+      <label>Longitudine
+        <input type="number" name="lon" step="any" value="12.5" required>
+      </label>
+      <label>Fuso orario
+        <input type="text" name="tz" value="Europe/Rome" required>
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Campo fotovoltaico</h2>
+    <div class="form-grid">
+      <label>Potenza (kWp)
+        <input type="number" name="pv_power_kw" step="any" value="6.0" required>
+      </label>
+      <label>Tilt (°)
+        <input type="number" name="tilt" step="any" value="30">
+      </label>
+      <label>Azimuth (°)
+        <input type="number" name="azimuth" step="any" value="180">
+      </label>
+      <label>Potenza inverter (kW)
+        <input type="number" name="inverter_power_kw" step="any" value="6.0" required>
+      </label>
+      <label>Perdite di sistema (%)
+        <input type="number" name="system_losses_pct" step="any" value="14">
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Carico</h2>
+    <div class="radio-row">
+      <label><input type="radio" name="load_source" value="synthetic" x-model="loadSource" checked>
+        Curva sintetica</label>
+      <label><input type="radio" name="load_source" value="real" x-model="loadSource">
+        Curva reale</label>
+    </div>
+    <div class="form-grid" x-show="loadSource === 'synthetic'">
+      <label>Consumo annuale (kWh)
+        <input type="number" name="annual_consumption_kwh" step="any" value="4000">
+      </label>
+    </div>
+    <div class="form-grid" x-show="loadSource === 'real'">
+      <label>Profilo archiviato
+        <select name="load_profile_id">
+          {% for profile in profiles %}
+          <option value="{{ profile.id }}">{{ profile.name }} ({{ profile.profile_type }})</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Batteria
+      <label class="switch"><input type="checkbox" x-model="battery"> abilitata</label>
+    </h2>
+    <fieldset :disabled="!battery" x-bind:disabled="!battery" class="form-grid">
+      <label>Capacità (kWh)
+        <input type="number" name="battery_capacity_kwh" step="any" value="10.0">
+      </label>
+      <label>C-rate
+        <input type="number" name="battery_c_rate" step="any" value="0.5" min="0.1" max="1.0">
+      </label>
+      <label>Efficienza round-trip (%)
+        <input type="number" name="battery_efficiency_pct" step="any" value="95">
+      </label>
+      <label>SOC minimo (%)
+        <input type="number" name="battery_soc_min_pct" step="any" value="10">
+      </label>
+      <label>SOC massimo (%)
+        <input type="number" name="battery_soc_max_pct" step="any" value="90">
+      </label>
+      <label>Anno sostituzione
+        <input type="number" name="battery_replace_at_year" value="12">
+      </label>
+      <label>Costo sostituzione batteria (€)
+        <input type="number" name="battery_replacement_cost_eur" step="any" value="2500">
+      </label>
+    </fieldset>
+  </section>
+
+  <section class="card">
+    <h2>Tariffe (monoraria)</h2>
+    <div class="form-grid">
+      <label>Prezzo acquisto (€/kWh)
+        <input type="number" name="purchase_eur_kwh" step="any" value="0.30" required>
+      </label>
+      <label>Prezzo vendita (€/kWh)
+        <input type="number" name="sell_eur_kwh" step="any" value="0.12" required>
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Economia</h2>
+    <div class="form-grid">
+      <label>Orizzonte (anni)
+        <input type="number" name="horizon_years" value="25" min="1" required>
+      </label>
+      <label>Investimento (€)
+        <input type="number" name="investment_cost_eur" step="any" value="12000" required>
+      </label>
+      <label>Manutenzione annuale (€)
+        <input type="number" name="maintenance_annual_eur" step="any" value="0">
+      </label>
+      <label>Anni prestito (0 = nessuno)
+        <input type="number" name="loan_years" value="0" min="0">
+      </label>
+      <label>Tasso prestito (%)
+        <input type="number" name="loan_interest_pct" step="any" value="4.5">
+      </label>
+      <label>Sostituzione inverter — anno
+        <input type="number" name="inverter_replace_at_year" value="10">
+      </label>
+      <label>Costo sostituzione inverter (€)
+        <input type="number" name="inverter_replacement_cost_eur" step="any" value="1500">
+      </label>
+      <label>Attivazione contatore/RCPV (€)
+        <input type="number" name="grid_activation_eur" step="any" value="100">
+      </label>
+      <label>Costo annuale contatore/RCPV (€)
+        <input type="number" name="grid_annual_eur" step="any" value="30">
+      </label>
+    </div>
+  </section>
+
+  <p id="form-error" class="error" hidden></p>
+  <button type="submit" class="btn btn-primary btn-lg">Avvia simulazione</button>
+</form>
+
+<script>
+(function () {
+  const textFields = new Set(['name', 'tz', 'load_source']);
+  document.getElementById('sim-form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const errorEl = document.getElementById('form-error');
+    errorEl.hidden = true;
+
+    const form = e.currentTarget;
+    const data = {};
+    new FormData(form).forEach(function (v, k) { data[k] = v; });
+
+    for (const k of Object.keys(data)) {
+      if (k === 'load_source') continue;
+      if (textFields.has(k)) continue;
+      data[k] = data[k] === '' ? null : Number(data[k]);
+    }
+
+    if (data.load_source === 'real') {
+      data.annual_consumption_kwh = null;
+    } else {
+      data.load_profile_id = null;
+    }
+    delete data.load_source;
+
+    if (!form.querySelector('[name="battery_capacity_kwh"]').closest('fieldset').disabled) {
+      data.battery_capacity_kwh = null;
+      data.battery_c_rate = null;
+      data.battery_efficiency_pct = null;
+      data.battery_soc_min_pct = null;
+      data.battery_soc_max_pct = null;
+      data.battery_replace_at_year = null;
+      data.battery_replacement_cost_eur = null;
+    }
+
+    if (data.loan_years === 0) {
+      data.loan_years = null;
+      data.loan_interest_pct = null;
+    }
+
+    try {
+      const resp = await fetch('/api/simulations', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data),
+      });
+      if (resp.ok) {
+        const out = await resp.json();
+        window.location.href = '/simulations/' + out.id;
+      } else {
+        const err = await resp.json().catch(function () { return {}; });
+        errorEl.textContent = err.detail || 'Errore durante la creazione della simulazione.';
+        errorEl.hidden = false;
+      }
+    } catch (err) {
+      errorEl.textContent = 'Errore di rete: ' + err;
+      errorEl.hidden = false;
+    }
+  });
+})();
+</script>
+{% endblock %}
