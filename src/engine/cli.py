@@ -32,10 +32,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--system-losses-pct", type=float, default=0.0)
     load_group = parser.add_mutually_exclusive_group()
     load_group.add_argument("--load-csv", metavar="FILE", help="use a real CSV load curve")
-    load_group.add_argument("--load-synthetic", action="store_true", help="generate a synthetic load curve")
-    parser.add_argument("--annual-consumption", type=float, default=4000.0, help="kWh for synthetic load")
+    load_group.add_argument(
+        "--load-synthetic", action="store_true", help="generate a synthetic load curve"
+    )
+    parser.add_argument(
+        "--annual-consumption", type=float, default=4000.0, help="kWh for synthetic load"
+    )
     battery_group = parser.add_argument_group("battery")
-    battery_group.add_argument("--battery-capacity", type=float, default=10.0, help="battery capacity in kWh")
+    battery_group.add_argument(
+        "--battery-capacity", type=float, default=10.0, help="battery capacity in kWh"
+    )
     battery_group.add_argument("--battery-crate", type=float, default=0.5, help="battery C-rate")
     battery_group.add_argument("--no-battery", action="store_true", help="disable the battery")
     economic_group = parser.add_argument_group("economics")
@@ -52,7 +58,9 @@ def build_parser() -> argparse.ArgumentParser:
     economic_group.add_argument("--grid-activation-eur", type=float, default=100.0)
     economic_group.add_argument("--loan-interest-pct", type=float, default=0.0)
     economic_group.add_argument("--loan-years", type=int, default=0)
-    economic_group.add_argument("--pv-degradation", type=float, default=0.5, help="PV degradation %/year")
+    economic_group.add_argument(
+        "--pv-degradation", type=float, default=0.5, help="PV degradation %/year"
+    )
     economic_group.add_argument("--discount-rate", type=float, default=4.5, help="discount rate %")
     return parser
 

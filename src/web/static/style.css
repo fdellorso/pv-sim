@@ -79,6 +79,8 @@ fieldset { border: none; margin: 0; padding: 0; display: contents; }
 }
 .btn-primary { background: var(--primary); color: #fff; }
 .btn-primary:hover { background: #1d4ed8; }
+.btn-danger { background: var(--danger); color: #fff; margin-left: 0.5rem; }
+.btn-danger:hover { background: #b91c1c; }
 .btn-lg { font-size: 1.05rem; padding: 0.7rem 1.5rem; }
 
 .kpis {

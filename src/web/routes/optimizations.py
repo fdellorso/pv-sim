@@ -8,7 +8,7 @@ from typing import Literal
 
 import numpy as np
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -101,7 +101,9 @@ async def create_optimization(
 ) -> dict:
     """Create the optimization group and enqueue the sweep job."""
     if payload.load_profile_id is None and payload.annual_consumption_kwh is None:
-        raise HTTPException(status_code=422, detail="load_profile_id or annual_consumption_kwh is required")
+        raise HTTPException(
+            status_code=422, detail="load_profile_id or annual_consumption_kwh is required"
+        )
 
     capacities = _build_capacities(payload)
     if len(capacities) > 30:

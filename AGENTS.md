@@ -102,8 +102,9 @@ CONTEXT.md      domain glossary (read before domain work)
 - Package manager is `uv`. Never convert to pip/poetry.
 - Python ≥3.12, fully typed (pyright). No untyped public functions.
 - Config via environment variables, centralized in `src/web/config.py`.
-- No test/lint infrastructure exists yet. **Before adding pytest, ruff, or
-  pyright CI, confirm with the user first** (see `docs/roadmap.md`).
+- Tests/lint active (added with user confirmation in Phase 10):
+  `uv run pytest`, `uv run ruff check .`, `uv run ruff format .`,
+  `uv run pyright src/`. Run before completing a phase.
 - Load curves live as CSV on disk; the DB stores metadata only.
 - Simulation jobs run in the worker; the web layer only enqueues and polls.
 

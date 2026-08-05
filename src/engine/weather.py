@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import cast
 
 import pandas as pd
 import pvlib.iotools
@@ -11,7 +12,7 @@ import pvlib.iotools
 @lru_cache(maxsize=32)
 def _fetch_pvgis_tmy(lat: float, lon: float) -> tuple[pd.DataFrame, dict]:
     """Fetch raw PVGIS TMY data, cached by site coordinates."""
-    return pvlib.iotools.get_pvgis_tmy(lat, lon)
+    return cast(tuple[pd.DataFrame, dict], pvlib.iotools.get_pvgis_tmy(lat, lon))
 
 
 def get_weather(lat: float, lon: float, tz: str, year: int = 2020) -> pd.DataFrame:

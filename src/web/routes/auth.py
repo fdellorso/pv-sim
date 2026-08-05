@@ -27,7 +27,7 @@ async def login(
     next: str = Form("/"),
 ) -> RedirectResponse:
     if password != get_settings().app_password:
-        return RedirectResponse(url=f"/login?error=1", status_code=303)
+        return RedirectResponse(url="/login?error=1", status_code=303)
     response = RedirectResponse(url=next, status_code=303)
     response.set_cookie(
         SESSION_COOKIE,

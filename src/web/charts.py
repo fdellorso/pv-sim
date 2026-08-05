@@ -79,9 +79,7 @@ def cashflow_figure(results: list[SimulationResult]) -> go.Figure:
     cumulative = [r.cumulative_cashflow_eur for r in results]
 
     fig = go.Figure()
-    fig.add_trace(
-        go.Bar(x=years, y=net, name="Netto annuo", marker_color="#10b981")
-    )
+    fig.add_trace(go.Bar(x=years, y=net, name="Netto annuo", marker_color="#10b981"))
     fig.add_trace(
         go.Scatter(
             x=years,

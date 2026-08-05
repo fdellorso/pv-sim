@@ -24,7 +24,9 @@ async def new_simulation_page(
     request: Request,
     session: AsyncSession = Depends(get_session),
 ):
-    profiles = (await session.execute(select(LoadProfile).order_by(LoadProfile.name))).scalars().all()
+    profiles = (
+        (await session.execute(select(LoadProfile).order_by(LoadProfile.name))).scalars().all()
+    )
     return templates.TemplateResponse(
         request,
         "new_simulation.html",

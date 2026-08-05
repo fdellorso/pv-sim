@@ -27,7 +27,14 @@
     <div class="kpi"><span class="kpi-value">{{ "%.1f"|format(metrics.total_autosufficienza_pct) }} %</span><span class="kpi-label">Autosufficienza media</span></div>
   </section>
 
-  <p><a class="btn btn-primary" href="/api/simulations/{{ simulation.id }}/report.pdf">Scarica report PDF</a></p>
+  <p>
+    <a class="btn btn-primary" href="/api/simulations/{{ simulation.id }}/report.pdf">Scarica report PDF</a>
+    <button class="btn btn-danger" onclick="if (confirm('Eliminare definitivamente questa simulazione?')) {
+      fetch('/api/simulations/{{ simulation.id }}', { method: 'DELETE' }).then(function (r) {
+        if (r.ok || r.status === 204) window.location.href = '/new';
+      });
+    }">Elimina</button>
+  </p>
 
   <section class="charts">
     {% if figures.get("daily") %}

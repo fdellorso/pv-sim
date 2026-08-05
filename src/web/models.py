@@ -49,7 +49,9 @@ class Simulation(Base):
     battery_capacity_kwh: Mapped[float | None] = mapped_column(Float, nullable=True)
     battery_c_rate: Mapped[float | None] = mapped_column(Float, nullable=True)
     battery_efficiency_pct: Mapped[float | None] = mapped_column(Float, nullable=True, default=95.0)
-    battery_degradation_pct_year: Mapped[float | None] = mapped_column(Float, nullable=True, default=2.0)
+    battery_degradation_pct_year: Mapped[float | None] = mapped_column(
+        Float, nullable=True, default=2.0
+    )
     battery_soc_min_pct: Mapped[float | None] = mapped_column(Float, nullable=True, default=10.0)
     battery_soc_max_pct: Mapped[float | None] = mapped_column(Float, nullable=True, default=90.0)
     battery_replace_at_year: Mapped[int | None] = mapped_column(Integer, nullable=True, default=12)

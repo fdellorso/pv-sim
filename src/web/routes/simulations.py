@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import shutil
+from pathlib import Path
+from typing import cast
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
@@ -10,6 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.web.charts import cashflow_figure, daily_curves_figure, read_curves
+from src.web.config import get_settings
 from src.web.database import get_session
 from src.web.models import LoadProfile, Simulation, SimulationMetrics, SimulationResult
 from src.web.report import build_report_pdf
@@ -92,19 +96,25 @@ def _metrics_to_dict(metrics: SimulationMetrics) -> dict:
     }
 
 
-async def _load_results(session: AsyncSession, simulation_id: int) -> tuple[SimulationMetrics | None, list[SimulationResult]]:
+async def _load_results(
+    session: AsyncSession, simulation_id: int
+) -> tuple[SimulationMetrics | None, list[SimulationResult]]:
     metrics = (
         await session.execute(
             select(SimulationMetrics).where(SimulationMetrics.simulation_id == simulation_id)
         )
     ).scalar_one_or_none()
     rows = (
-        await session.execute(
-            select(SimulationResult)
-            .where(SimulationResult.simulation_id == simulation_id)
-            .order_by(SimulationResult.year)
+        (
+            await session.execute(
+                select(SimulationResult)
+                .where(SimulationResult.simulation_id == simulation_id)
+                .order_by(SimulationResult.year)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     return metrics, list(rows)
 
 
@@ -134,6 +144,24 @@ async def download_report(
     )
 
 
+@api_router.delete("/{simulation_id}", status_code=204)
+async def delete_simulation(
+    simulation_id: int,
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Delete a simulation, its results/metrics (DB cascade) and curve files."""
+    sim = await session.get(Simulation, simulation_id)
+    if sim is None:
+        raise HTTPException(status_code=404, detail="simulation not found")
+
+    await session.delete(sim)
+    await session.commit()
+
+    curves_dir = Path(get_settings().simulation_data_dir) / str(simulation_id)
+    shutil.rmtree(curves_dir, ignore_errors=True)
+    return Response(status_code=204)
+
+
 @api_router.post("", status_code=202)
 async def create_simulation(
     payload: SimulationCreate,
@@ -142,7 +170,9 @@ async def create_simulation(
 ) -> dict:
     """Persist a simulation row and enqueue the worker job."""
     if payload.load_profile_id is None and payload.annual_consumption_kwh is None:
-        raise HTTPException(status_code=422, detail="load_profile_id or annual_consumption_kwh is required")
+        raise HTTPException(
+            status_code=422, detail="load_profile_id or annual_consumption_kwh is required"
+        )
     if payload.load_profile_id is not None:
         profile = await session.get(LoadProfile, payload.load_profile_id)
         if profile is None:
@@ -213,9 +243,9 @@ async def simulation_status_fragment(
         curves = read_curves(simulation_id)
         if curves is not None:
             pv, load = curves
-            figures["daily"] = daily_curves_figure(pv, load).to_json()
+            figures["daily"] = cast(str, daily_curves_figure(pv, load).to_json())
         if rows:
-            figures["cashflow"] = cashflow_figure(rows).to_json()
+            figures["cashflow"] = cast(str, cashflow_figure(rows).to_json())
 
     return templates.TemplateResponse(
         request,

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
@@ -29,6 +31,10 @@ from src.web.models import (
 
 DT_HOURS = 0.25
 
+logger = logging.getLogger(__name__)
+
+_PVGIS_ERROR = "Meteo PVGIS non disponibile: verificare la connessione di rete e riprovare"
+
 
 @dataclass
 class PipelineResult:
@@ -37,12 +43,21 @@ class PipelineResult:
     load_year1: pd.Series
 
 
+def _fetch_weather(lat: float, lon: float, tz: str) -> pd.DataFrame:
+    """Fetch weather with a user-friendly error when PVGIS is unreachable."""
+    try:
+        return get_weather(lat, lon, tz)
+    except (ConnectionError, TimeoutError, OSError) as exc:
+        logger.warning("PVGIS unreachable for (%s, %s): %s", lat, lon, exc)
+        raise RuntimeError(_PVGIS_ERROR) from exc
+
+
 def _build_base_inputs(
     sim: Simulation,
     load_profile: LoadProfile | None,
 ) -> tuple[pd.Series, pd.Series, EconomicParams, BatteryParams]:
     """Build the year-1 PV/load series and the base economic/battery params."""
-    weather = get_weather(sim.lat, sim.lon, sim.tz)
+    weather = _fetch_weather(sim.lat, sim.lon, sim.tz)
     pv = run_pv_model(
         weather,
         PVSystemParams(
@@ -133,7 +148,9 @@ def _to_result_rows(simulation_id: int, economic: EconomicResult) -> list[Simula
 
 def _to_metrics(simulation_id: int, economic: EconomicResult) -> SimulationMetrics:
     total_autoconsumo = sum(e.self_consumption_pct for e in economic.annual) / len(economic.annual)
-    total_autosufficienza = sum(e.autosufficienza_pct for e in economic.annual) / len(economic.annual)
+    total_autosufficienza = sum(e.autosufficienza_pct for e in economic.annual) / len(
+        economic.annual
+    )
     return SimulationMetrics(
         simulation_id=simulation_id,
         npv_eur=economic.npv_eur,
@@ -157,6 +174,10 @@ async def run_simulation(ctx: dict, simulation_id: int) -> dict[str, object]:
         if sim is None:
             raise ValueError(f"Simulation {simulation_id} not found")
 
+        if sim.status != "queued":
+            logger.warning("Skipping simulation %s: already %s", simulation_id, sim.status)
+            return {"simulation_id": simulation_id, "status": sim.status}
+
         load_profile = None
         if sim.load_profile_id is not None:
             load_profile = await session.get(LoadProfile, sim.load_profile_id)
@@ -164,6 +185,8 @@ async def run_simulation(ctx: dict, simulation_id: int) -> dict[str, object]:
         sim.status = "running"
         sim.error_message = None
         await session.commit()
+        started = time.monotonic()
+        logger.info("Job started: simulation=%s", simulation_id)
 
         try:
             pipeline = await asyncio.to_thread(_run_pipeline, sim, load_profile)
@@ -171,6 +194,7 @@ async def run_simulation(ctx: dict, simulation_id: int) -> dict[str, object]:
             sim.status = "failed"
             sim.error_message = str(exc)
             await session.commit()
+            logger.error("Job failed: simulation=%s error=%s", simulation_id, exc, exc_info=True)
             raise
 
         _write_curves(simulation_id, pipeline.pv_year1, pipeline.load_year1)
@@ -178,6 +202,11 @@ async def run_simulation(ctx: dict, simulation_id: int) -> dict[str, object]:
         session.add(_to_metrics(simulation_id, pipeline.economic))
         sim.status = "completed"
         await session.commit()
+        logger.info(
+            "Job completed: simulation=%s duration=%.1fs",
+            simulation_id,
+            time.monotonic() - started,
+        )
 
     return {"simulation_id": simulation_id, "status": "completed"}
 
@@ -218,6 +247,8 @@ async def run_optimization(ctx: dict, payload: dict) -> dict[str, object]:
     replace_per_kwh = float(payload["battery_replace_eur_per_kwh"])
 
     session_factory: async_sessionmaker[AsyncSession] = ctx["db_session"]
+    started = time.monotonic()
+    logger.info("Optimization started: group=%s scenarios=%d", group, len(capacities))
     async with session_factory() as session:
         simulations: list[tuple[Simulation, float]] = []
         for capacity in capacities:
@@ -267,9 +298,7 @@ async def run_optimization(ctx: dict, payload: dict) -> dict[str, object]:
         for sim, capacity in simulations:
             scenario = (
                 await session.execute(
-                    select(OptimizationScenario).where(
-                        OptimizationScenario.simulation_id == sim.id
-                    )
+                    select(OptimizationScenario).where(OptimizationScenario.simulation_id == sim.id)
                 )
             ).scalar_one()
             result = results_by_capacity.get(capacity)
@@ -292,4 +321,9 @@ async def run_optimization(ctx: dict, payload: dict) -> dict[str, object]:
             if best_capacity is not None and capacity == best_capacity:
                 _write_curves(sim.id, pv, load)
 
+    logger.info(
+        "Optimization completed: group=%s duration=%.1fs",
+        group,
+        time.monotonic() - started,
+    )
     return {"optimization_group": group, "scenarios": len(capacities)}

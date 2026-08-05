@@ -41,7 +41,7 @@ async def upload_load_profile(
 
     try:
         df = pd.read_csv(file_path)
-        annual_consumption_kwh = float(df["power_kw"].sum()) * DT_HOURS
+        annual_consumption_kwh = float(df["power_kw"].to_numpy().sum()) * DT_HOURS
     except (KeyError, ValueError, pd.errors.ParserError) as exc:
         file_path.unlink(missing_ok=True)
         raise HTTPException(status_code=400, detail=f"Invalid CSV: {exc}") from exc
@@ -58,4 +58,8 @@ async def upload_load_profile(
     await session.commit()
     await session.refresh(profile)
 
-    return {"id": profile.id, "name": profile.name, "annual_consumption_kwh": annual_consumption_kwh}
+    return {
+        "id": profile.id,
+        "name": profile.name,
+        "annual_consumption_kwh": annual_consumption_kwh,
+    }

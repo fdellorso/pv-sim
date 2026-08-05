@@ -119,12 +119,24 @@ pywebview (see `docs/adr/0004-desktop-pywebview.md`).
       sistema di WeasyPrint (pango/cairo/glib/gdk-pixbuf + font DejaVu).
 - [x] **Milestone:** report PDF scaricabile.
 
-## Phase 10 — Polish & hardening
+## Phase 10 — Polish & hardening (done)
 
-- Tests (pytest) — **confirm with user before adding.**
-- Lint/typecheck (ruff + pyright) — **confirm with user before adding.**
-- Error handling, logging, edge cases (bad CSV, PVGIS outage).
-- Deployment docs and `.env.example` finalization.
+- [x] **Test (pytest)** — confermato dall'utente. Dev deps: pytest,
+      pytest-asyncio, pytest-cov, aiosqlite. Suite in `tests/` (engine unit,
+      web API con httpx + app lifespan, worker helpers): 38 test verdi.
+      `uv run pytest`.
+- [x] **Lint/typecheck (ruff + pyright)** — confermato dall'utente.
+      Config in `pyproject.toml`; `uv run ruff check .`, `uv run ruff format .`,
+      `uv run pyright src/` (0 errori). Violazioni esistenti corrette.
+- [x] Error handling: messaggio utente per PVGIS irraggiungibile, guardia
+      anti doppio enqueue, `DELETE /api/simulations/{id}` con cleanup delle
+      curve su disco + bottone "Elimina" nel dashboard.
+- [x] Logging worker (start/end/durata, errori con stack trace).
+- [x] `.env.example` completo (incl. `SIMULATION_DATA_DIR`).
+- [x] **Milestone:** test, lint e typecheck verdi; deploy documentato.
+
+**MVP completo**: Phases 1-10 terminano. Restano le Fasi 11-13 sul branch
+`desktop` (pywebview, vedi ADR-0004).
 
 ## Phase 11 — Desktop: SQLite migration (branch `desktop`)
 

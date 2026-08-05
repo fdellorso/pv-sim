@@ -27,7 +27,9 @@ def load_curve_from_csv(file_path: str, tz: str) -> pd.Series:
     return resampled
 
 
-def scale_curve_to_annual(curve: pd.Series, target_kwh: float, dt_hours: float = DT_HOURS) -> pd.Series:
+def scale_curve_to_annual(
+    curve: pd.Series, target_kwh: float, dt_hours: float = DT_HOURS
+) -> pd.Series:
     """Scale a curve so that ``sum(curve) * dt_hours`` equals ``target_kwh``."""
     if target_kwh <= 0:
         raise ValueError("target_kwh must be positive")

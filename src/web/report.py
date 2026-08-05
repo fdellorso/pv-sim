@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import io
 from datetime import datetime
+from typing import cast
 
 import matplotlib
 
@@ -87,4 +88,4 @@ def build_report_pdf(
         "cashflow_png": _cashflow_png(results) if results else None,
     }
     html = templates.get_template("report.html").render(**context)
-    return HTML(string=html).write_pdf()
+    return cast(bytes, HTML(string=html).write_pdf())

@@ -3,11 +3,18 @@
 Run with: ``arq src.worker.main.WorkerSettings``
 """
 
+import logging
+
 from arq.connections import RedisSettings
 
 from src.web.config import get_settings
 from src.web.database import async_session, engine
 from src.worker.jobs import run_optimization, run_simulation
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
 
 
 async def on_startup(ctx: dict) -> None:

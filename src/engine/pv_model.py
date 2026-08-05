@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -31,8 +32,8 @@ def run_pv_model(weather: pd.DataFrame, params: PVSystemParams) -> pd.Series:
     """
     location = Location(params.lat, params.lon, tz=params.tz)
     system = PVSystem(
-        surface_tilt=params.tilt,
-        surface_azimuth=params.azimuth,
+        surface_tilt=cast(int, params.tilt),
+        surface_azimuth=cast(int, params.azimuth),
         module_parameters={"pdc0": params.power_kw * 1000, "gamma_pdc": -0.004},
         inverter_parameters={"pdc0": params.power_kw * 1000},
         racking_model="open_rack",
@@ -47,7 +48,7 @@ def run_pv_model(weather: pd.DataFrame, params: PVSystemParams) -> pd.Series:
     )
     model_chain.run_model(weather)
 
-    ac = model_chain.results.ac.fillna(0) / 1000
+    ac = cast(pd.Series, model_chain.results.ac).fillna(0) / 1000
     ac = np.minimum(ac, params.inverter_power_kw)
     ac = ac * (1 - params.system_losses_pct / 100)
     return ac
