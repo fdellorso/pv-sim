@@ -3,10 +3,11 @@
 ## Stato
 
 Sessione intensiva di test manuali sull'MVP (Phases 1-10 completate).
-7 bug trovati e fixati, 9 enhancement identificati e rinviati a dopo il ciclo
-di test. Desktop app (Phases 11-13) rinviata a completamento test.
+11 bug trovati e fixati (B1-B7 in questa sessione, B8-B11 nella Sessione 4),
+9 enhancement identificati e rinviati a dopo il ciclo di test. Desktop app
+(Phases 11-13) rinviata a completamento test.
 
-## Bug fixati (7)
+## Bug fixati (7) — Sessione 1
 
 | ID | Area | Descrizione | File |
 |---|---|---|---|
@@ -19,6 +20,17 @@ di test. Desktop app (Phases 11-13) rinviata a completamento test.
 | **B7** | Grafici | Colori giorno tipo: FV inverno/estate e Carico inverno/estate tutti uguali → differenziati 4 colori | `charts.py:46-48` |
 
 Tutti i fix verificati con pytest (38 OK), ruff, pyright (0 errori), rebuild docker.
+
+## Bug fixati (4) — Sessione 4 (2026-08-06)
+
+| ID | Area | Descrizione | File |
+|---|---|---|---|
+| **B8** | Upload CSV | CSV senza colonna `timestamp` passava l'upload (201) → il worker falliva. Ora 400 "CSV must contain 'timestamp' and 'power_kw' columns" | `load_profiles.py:45-50` |
+| **B9** | Upload CSV | CSV malformato restituiva 201 con `annual_consumption_kwh: null` (NaN in DB). Ora 400 "CSV has no valid power_kw data" | `load_profiles.py:51-56` |
+| **B10** | Engine | `load_curve_from_csv` falliva su ora ambigua DST (fall-back autunno): `ambiguous="infer"` non infere su dati uniformi. Fallback a `ambiguous="NaT"` + rimozione NaT | `load_model.py:22-29` |
+| **B11** | Worker | Broadcast mismatch: PV index 35037 punti (TMY 365 giorni in anno bisestile 2020) vs CSV reale 35040 → `pv - load` numpy fallisce. Ora CSV riallineato a `pv.index` con `reindex(fill_value=0.0)` | `jobs.py:76` |
+
+Verifiche: pytest 47 OK (38 → 47), ruff, pyright (0 errori).
 
 ## Enhancement accumulati (9)
 
@@ -90,14 +102,14 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 - [ ] A2.3 Responsività CSS/Alpine.js su resize
 
 ### A3. Gestione dati (CRUD)
-- [ ] A3.1 Upload CSV profilo di carico (validazione, storage, metadati)
+- [x] A3.1 Upload CSV profilo di carico (validazione, storage, metadati) — **funziona** (Sessione 4, fix B8/B9)
 - [x] A3.2 Eliminazione simulazione (conferma, cascade DB, pulizia disco) — **funziona**
-- [ ] A3.3 Lista profili di carico nel dropdown del form
+- [x] A3.3 Lista profili di carico nel dropdown del form — **funziona** (Sessione 4)
 
 ### A4. UX del form
 - [x] A4.1 Toggle batteria (abilita/disabilita fields) — **funziona** (era rotto B3, fixato)
 - [x] A4.2 Toggle ottimizzazione (cambia endpoint + campi) — **funziona**
-- [ ] A4.3 Toggle profilo reale vs sintetico (radio)
+- [x] A4.3 Toggle profilo reale vs sintetico (radio) — **funziona** (Sessione 4)
 - [ ] A4.4 Radio sweep vs manuale nell'ottimizzazione — **funziona** (verificato B4/B6)
 - [ ] A4.5 Validazione lato client (campi null vs 0, loan_years=0)
 - [ ] A4.6 Messaggi di errore form (rete + validazione server) — **fixato B5**, da verificare visivamente
@@ -147,8 +159,8 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 
 ### B3. Curva di carico (load_model)
 - [x] B3.1 Curva sintetica residenziale (due picchi, rumore) — **funziona**
-- [ ] B3.2 Scalatura su consumo annuo (kWh totali = target)
-- [ ] B3.3 Caricamento CSV reale (timestamp, DST, duplicati, risoluzioni)
+- [x] B3.2 Scalatura su consumo annuo (kWh totali = target) — **funziona** (Sessione 4: 4000 kWh confermati)
+- [x] B3.3 Caricamento CSV reale (timestamp, DST, duplicati, risoluzioni) — **funziona** (Sessione 4, fix B10/B11)
 - [ ] B3.4 Profili non residenziali (commerciale, industriale, agricolo) — **assente** (gap)
 - [ ] B3.5 Variazione stagionale/weekend nella curva sintetica — **assente** (gap)
 
@@ -235,13 +247,25 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 - ✅ Grafici con 4 colori distinti per stagione/categoria
 - Nota: manca l'andamento della batteria nel grafico → **E7**
 
+### Sessione 4 — Upload CSV reale (2026-08-06)
+- ✅ Upload CSV valido via API (201, `annual_consumption_kwh` corretto)
+- ✅ Persistenza dopo restart Docker (profilo presente nel dropdown)
+- ❌ CSV senza `timestamp` → **fixato (B8)**: ora 400
+- ❌ CSV malformato → **fixato (B9)**: ora 400 (prima 201 con kWh null)
+- ❌ Simulazione flat curve → **fixato (B10, B11)**: prima errore DST, poi broadcast mismatch
+- ✅ Non-CSV / vuoto / manca `power_kw` → 400 corretti
+- ✅ Confronto reale vs sintetico: flat 64% autoconsumo vs sintetica 35.5% (differenza coerente,
+  la curva flat copre il carico diurno → più autoconsumo)
+- Nota: `test_load_4000.csv` è dati sintetici (stessa forma del generatore) → per testare
+  curve diverse serve un CSV con pattern differente (creato `test_load_flat.csv`)
+
 ## Test ancora da fare
 
-### Sessione 4 — Upload CSV reale
-1. Caricare un CSV di profilo di carico via API (`POST /api/load-profiles/upload`)
-2. Simulazione con profilo reale (dropdown nel form)
-3. Verifica che la curva reale venga usata correttamente
-4. Validazioni: file non CSV, vuoto, colonna `power_kw` mancante (gap C12)
+### Sessione 4 — Upload CSV reale **(completata 2026-08-06)**
+1. ~~Caricare un CSV di profilo di carico via API~~ — fatto, 201 OK
+2. ~~Simulazione con profilo reale~~ — fatto, completed (dopo fix B10/B11)
+3. ~~Verifica che la curva reale venga usata correttamente~~ — fatto (flat 64% vs sintetica 35.5%)
+4. ~~Validazioni: file non CSV, vuoto, colonna `power_kw` mancante~~ — fatto (400 corretti; fix B8/B9)
 
 ### Sessione 5 — Prestito, sostituzioni, RCPV
 1. Simulazione con prestito (loan_years > 0) → verificare NPV e cashflow
@@ -276,7 +300,7 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 
 ```bash
 docker compose ps                          # tutti i servizi up
-uv run pytest                              # 38 passed
+uv run pytest                              # 47 passed
 uv run ruff check . && uv run pyright src/ # clean
 docker compose build web && docker compose up -d web  # redeploy web
 git log --oneline -5
@@ -284,7 +308,7 @@ git log --oneline -5
 
 ## Prossima sessione
 
-1. **Riprendere test dalla Sessione 4** (upload CSV reale)
+1. **Riprendere test dalla Sessione 5** (prestito, sostituzioni, RCPV)
 2. **Non iniziare implementazione enhancement** fino al completamento del ciclo di test
 3. Al termine dei test, prioritizzare enhancement e implementare in ordine
 4. Considerare verifica fine-tuning dei risultati (confronto casi reali, B7.4)

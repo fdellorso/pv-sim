@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -19,8 +21,18 @@ def load_curve_from_csv(file_path: str, tz: str) -> pd.Series:
     df = pd.read_csv(file_path)
     timestamp = pd.to_datetime(df["timestamp"])
     if timestamp.dt.tz is None:
-        timestamp = timestamp.dt.tz_localize(tz, ambiguous="infer", nonexistent="shift_forward")
+        try:
+            timestamp = timestamp.dt.tz_localize(tz, ambiguous="infer", nonexistent="shift_forward")
+        except ValueError:
+            timestamp = timestamp.dt.tz_localize(tz, ambiguous="NaT", nonexistent="shift_forward")
     curve = pd.Series(df["power_kw"].to_numpy(), index=timestamp, name="power_kw")
+    index_vals = cast(pd.DatetimeIndex, curve.index).to_numpy()
+    valid = ~pd.isna(index_vals)
+    curve = pd.Series(
+        curve.to_numpy()[valid],
+        index=index_vals[valid],
+        name="power_kw",
+    )
     mask = ~curve.index.duplicated(keep="first")
     deduplicated = curve.loc[mask].sort_index()
     resampled: pd.Series = deduplicated.resample("15min").interpolate()

@@ -5,6 +5,7 @@ from __future__ import annotations
 import uuid
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,7 +42,16 @@ async def upload_load_profile(
 
     try:
         df = pd.read_csv(file_path)
+        if "timestamp" not in df.columns or "power_kw" not in df.columns:
+            file_path.unlink(missing_ok=True)
+            raise HTTPException(
+                status_code=400,
+                detail="CSV must contain 'timestamp' and 'power_kw' columns",
+            )
         annual_consumption_kwh = float(df["power_kw"].to_numpy().sum()) * DT_HOURS
+        if not (np.isfinite(annual_consumption_kwh) and annual_consumption_kwh > 0):
+            file_path.unlink(missing_ok=True)
+            raise HTTPException(status_code=400, detail="CSV has no valid power_kw data")
     except (KeyError, ValueError, pd.errors.ParserError) as exc:
         file_path.unlink(missing_ok=True)
         raise HTTPException(status_code=400, detail=f"Invalid CSV: {exc}") from exc

@@ -73,7 +73,9 @@ def _build_base_inputs(
     )
 
     if load_profile is not None:
-        load = load_curve_from_csv(load_profile.file_path, sim.tz)
+        load = load_curve_from_csv(load_profile.file_path, sim.tz).reindex(
+            pv.index, fill_value=0.0
+        )
     else:
         load = generate_synthetic_curve(pv.index, sim.annual_consumption_kwh or 0.0)
 

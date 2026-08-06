@@ -8,6 +8,7 @@ from typing import cast
 import pandas as pd
 import pytest
 
+from src.engine.battery_model import BatteryParams, run_battery
 from src.engine.load_model import (
     generate_synthetic_curve,
     load_curve_from_csv,
@@ -51,3 +52,37 @@ def test_load_curve_from_csv(tmp_path: Path) -> None:
     curve = load_curve_from_csv(str(csv_path), "Europe/Rome")
     assert cast(pd.DatetimeIndex, curve.index).tz is not None
     assert curve.sum() == pytest.approx(6.0)
+
+
+def test_load_curve_handles_dst_fall_back(tmp_path: Path) -> None:
+    csv_path = tmp_path / "dst.csv"
+    index = pd.date_range(
+        "2020-10-24", periods=96 * 3, freq="15min"
+    )  # naive: contains both DST folds
+    csv_path.write_text(
+        "timestamp,power_kw\n" + "".join(f"{ts:%Y-%m-%d %H:%M:%S},1.0\n" for ts in index)
+    )
+
+    curve = load_curve_from_csv(str(csv_path), "Europe/Rome")
+    assert curve.isna().sum() == 0
+    assert len(curve) > 0
+    autumn = curve.loc["2020-10-25"]
+    assert float(autumn.sum()) == pytest.approx(100.0)
+
+
+def test_load_curve_aligns_to_pv_index(tmp_path: Path) -> None:
+    csv_path = tmp_path / "load.csv"
+    index = pd.date_range("2020-10-24", periods=96 * 3, freq="15min")
+    csv_path.write_text(
+        "timestamp,power_kw\n" + "".join(f"{ts:%Y-%m-%d %H:%M:%S},1.0\n" for ts in index)
+    )
+
+    load = load_curve_from_csv(str(csv_path), "Europe/Rome")
+    pv_index = pd.date_range(
+        "2020-10-24", periods=96 * 3, freq="15min", tz="Europe/Rome"
+    )
+    aligned = load.reindex(pv_index, fill_value=0.0)
+    pv = pd.Series(1.0, index=pv_index)
+    result = run_battery(pv, aligned, BatteryParams(capacity_kwh=0.0))
+    assert len(aligned) == len(pv)
+    assert result.autoconsumo_pct > 0
