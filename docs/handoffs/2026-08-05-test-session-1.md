@@ -110,8 +110,8 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 - [x] A4.1 Toggle batteria (abilita/disabilita fields) — **funziona** (era rotto B3, fixato)
 - [x] A4.2 Toggle ottimizzazione (cambia endpoint + campi) — **funziona**
 - [x] A4.3 Toggle profilo reale vs sintetico (radio) — **funziona** (Sessione 4)
-- [ ] A4.4 Radio sweep vs manuale nell'ottimizzazione — **funziona** (verificato B4/B6)
-- [ ] A4.5 Validazione lato client (campi null vs 0, loan_years=0)
+- [x] A4.4 Radio sweep vs manuale nell'ottimizzazione — **funziona** (verificato B4/B6)
+- [x] A4.5 Validazione lato client (campi null vs 0, loan_years=0) — **funziona** (Sessione 5: loan_years=0 → null)
 - [ ] A4.6 Messaggi di errore form (rete + validazione server) — **fixato B5**, da verificare visivamente
 
 ### A5. Flusso simulazione (job lifecycle)
@@ -179,10 +179,10 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 - [ ] B5.2 IRR (bisezione [-0.999, 1.0]) — IRR > 100% → None? Verificare limite.
 - [x] B5.3 Payback semplice — **funziona**
 - [x] B5.4 Degradamento FV 0.5%/anno — **funziona** (autoconsumo sale negli anni)
-- [ ] B5.5 Prestito (ammortamento francese) — anno 0 esclude investimento
-- [ ] B5.6 Sostituzione inverter anno 10 — costo nell'anno giusto
-- [ ] B5.7 Sostituzione batteria anno 12 — costo nell'anno giusto
-- [ ] B5.8 RCPV: attivazione anno 0 + canone annuale
+- [x] B5.5 Prestito (ammortamento francese) — anno 0 esclude investimento — **funziona** (Sessione 5)
+- [x] B5.6 Sostituzione inverter anno 10 — costo nell'anno giusto — **funziona** (Sessione 5)
+- [x] B5.7 Sostituzione batteria anno 12 — costo nell'anno giusto — **funziona** (Sessione 5)
+- [x] B5.8 RCPV: attivazione anno 0 + canone annuale — **funziona** (Sessione 5)
 - [x] B5.9 Ricavo vendita + risparmio autoconsumo (tariffe monoraria) — **funziona**
 - [ ] B5.10 Flusso cumulativo cresce dopo il payback
 - [ ] B5.11 Sostituzioni multiple — **assente** (gap C3): inverter ogni 10 anni su 30 anni non modellato
@@ -259,6 +259,16 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 - Nota: `test_load_4000.csv` è dati sintetici (stessa forma del generatore) → per testare
   curve diverse serve un CSV con pattern differente (creato `test_load_flat.csv`)
 
+### Sessione 5 — Prestito, sostituzioni, RCPV (2026-08-06)
+- ✅ Baseline default: NPV/payback plausibili, calo Net CF all'anno 10 (inverter) e 12 (batteria)
+- ✅ Prestito 10 anni 5%: NPV più basso, payback più lungo, rate anni 1-10, nessuna rata anno 11+
+- ✅ Senza sostituzioni: anno 10 e 12 piatti, NPV più alto
+- ✅ RCPV azzerato: NPV più alto (attivazione + canone annuo rimossi)
+- ✅ Prestito tasso zero: rata = investimento / anni, NPV invariato
+- ✅ Prestito senza RCPV: anno-0 = 0, nessun crash
+- Nota: la tabella annuale e il grafico cashflow partono da anno 1; l'anno-0 (investimento)
+  è incluso solo nell'NPV, non nel cumulativo visualizzato (comportamento valido per tutti i casi)
+
 ## Test ancora da fare
 
 ### Sessione 4 — Upload CSV reale **(completata 2026-08-06)**
@@ -267,10 +277,10 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 3. ~~Verifica che la curva reale venga usata correttamente~~ — fatto (flat 64% vs sintetica 35.5%)
 4. ~~Validazioni: file non CSV, vuoto, colonna `power_kw` mancante~~ — fatto (400 corretti; fix B8/B9)
 
-### Sessione 5 — Prestito, sostituzioni, RCPV
-1. Simulazione con prestito (loan_years > 0) → verificare NPV e cashflow
-2. Sostituzione inverter (anno 10) e batteria (anno 12) nel cashflow
-3. RCPV: attivazione anno 0 + canone annuale
+### Sessione 5 — Prestito, sostituzioni, RCPV **(completata 2026-08-06)**
+1. ~~Simulazione con prestito (loan_years > 0)~~ — fatto, NPV più basso, payback più lungo
+2. ~~Sostituzione inverter (anno 10) e batteria (anno 12) nel cashflow~~ — fatto, cali Net CF visibili
+3. ~~RCPV: attivazione anno 0 + canone annuale~~ — fatto, verificato con scenario azzerato
 
 ### Sessione 6 — Località estreme e edge case
 1. Località alpine (es. Bolzano 46.5, 11.3) — produzione plausibile?
@@ -308,7 +318,7 @@ git log --oneline -5
 
 ## Prossima sessione
 
-1. **Riprendere test dalla Sessione 5** (prestito, sostituzioni, RCPV)
+1. **Riprendere test dalla Sessione 6** (località estreme e edge case)
 2. **Non iniziare implementazione enhancement** fino al completamento del ciclo di test
 3. Al termine dei test, prioritizzare enhancement e implementare in ordine
 4. Considerare verifica fine-tuning dei risultati (confronto casi reali, B7.4)
