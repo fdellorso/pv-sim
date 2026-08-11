@@ -199,7 +199,7 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 ### B7. Qualità complessiva simulazione
 - [x] B7.1 Autoconsumo % plausibile (senza batteria ~17%, con batteria ~45%) — **funziona**
 - [x] B7.2 Autosufficienza % plausibile (senza ~35%, con ~87%) — **funziona**
-- [ ] B7.3 Coerenza bilanci energetici (produzione = autoconsumo + immissione; consumo = autoconsumo + prelievo)
+- [x] B7.3 Coerenza bilanci energetici (produzione = autoconsumo + immissione; consumo = autoconsumo + prelievo) — **funziona** (Sessione 7, verificato su scenari 1000/4000/10000 kWh)
 - [ ] B7.4 Confronto con casi reali noti (es. 6kWp Roma, 4000 kWh, 10 kWh batteria)
 
 ## C. Gap identificati
@@ -281,6 +281,16 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 - ✅ Orizzonte 20/25/30: payback identico, NPV crescente, IRR cresce, tabelle con righe corrette
 - Nota: seconda sostituzione inverter non visibile su orizzonte 30 anni (gap C3 già documentato)
 
+### Sessione 7 — Test carico sintetico (2026-08-06)
+- ✅ Consumo 1000 kWh: autoconsumo basso, autosufficienza alto, payback lungo, NPV negativo
+  (PV 7200 >> carico → quasi tutto immesso in rete)
+- ✅ Consumo 10000 kWh: autoconsumo alto, autosufficienza basso, payback corto
+  (carico > PV → tutto il FV consumato localmente)
+- ✅ Consumo 4000 kWh: benchmark medio corretto
+- ✅ Consumo 0 kWh: stato `failed` con messaggio chiaro "target_kwh must be positive"
+  (validazione attesa da `scale_curve_to_annual`, non bug)
+- ✅ Bilanci energetici coerenti in tutti gli scenari (B7.3)
+
 ## Test ancora da fare
 
 ### Sessione 4 — Upload CSV reale **(completata 2026-08-06)**
@@ -301,9 +311,9 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 4. ~~Inverter molto sovradimensionato vs molto sottodimensionato~~ — fatto, clipping corretto
 5. ~~Orizzonte 20, 25, 30 anni~~ — fatto, payback fisso, NPV/IRR crescenti, 2ª sostituzione assente (C3)
 
-### Sessione 7 — Test carico sintetico
-1. Consumo annuale molto basso (1000 kWh) vs molto alto (10000 kWh)
-2. Verificare che autoconsumo e autosufficienza siano coerenti
+### Sessione 7 — Test carico sintetico **(completata 2026-08-06)**
+1. ~~Consumo annuale molto basso (1000 kWh) vs molto alto (10000 kWh)~~ — fatto, KPI coerenti
+2. ~~Verificare che autoconsumo e autosufficienza siano coerenti~~ — fatto, comportamento corretto
 
 ### Sessione 8 — Autenticazione ed errori
 1. Login password errata, scadenza sessione, redirect `next`
@@ -330,7 +340,7 @@ git log --oneline -5
 
 ## Prossima sessione
 
-1. **Riprendere test dalla Sessione 7** (test carico sintetico)
+1. **Riprendere test dalla Sessione 8** (autenticazione ed errori)
 2. **Non iniziare implementazione enhancement** fino al completamento del ciclo di test
 3. Al termine dei test, prioritizzare enhancement e implementare in ordine
 4. Considerare verifica fine-tuning dei risultati (confronto casi reali, B7.4)
