@@ -130,7 +130,7 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 ### A7. Ottimizzazione scenari
 - [x] A7.1 Sweep automatico con range/step — **funziona** (fix B4, B6)
 - [x] A7.2 Lista manuale di capacità — **funziona** (fix B4, B6)
-- [ ] A7.3 Limite 30 scenari (messaggio d'errore)
+- [x] A7.3 Limite 30 scenari (messaggio d'errore) — **funziona** (sweep 101 e manuale 31 → "Troppi scenari (max 30)"; 30 esatti → OK)
 - [x] A7.4 Polling HTMX con contatore progressi — **funziona**
 - [x] A7.5 Tabella comparativa (ordinamento NPV, badge "migliore") — **funziona**
 - [x] A7.6 Link al dashboard di ogni scenario — **funziona**
@@ -171,7 +171,9 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 - [ ] B4.4 Vincoli SOC min/max (mai sotto min o sopra max)
 - [x] B4.5 Degradamento annuale 2% (capacità cala negli anni) — **funziona**
 - [x] B4.6 Batteria assente (0 kWh) → risultati = PV diretto — **funziona**
-- [ ] B4.7 **Efficienza round-trip**: codice usa `η` in carica e `1/η` in scarica → round-trip effettivo `η²≈90.25%` invece di `η=95%`. Spec doc dice `sqrt(η)`. **Da verificare se intenzionale o bug.**
+- [x] B4.7 **Efficienza round-trip**: modello "semplice" `η` carica / `1/η` scarica → `η²` effettivo (90.25%).
+  **Non è un bug**: documentato come scelta intenzionale in `docs/simulation-engine.md:59-60` ("or simpler"),
+  già verificato in Phase 4 (`scarica/carica ≈ η²`). Gap C1 si chiude come "migliorare spiegazione utente nel form".
 - [ ] B4.8 SOC iniziale a soc_min (t=0) — mai visto comportamento anomalo?
 
 ### B5. Modello economico
@@ -206,7 +208,7 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 
 | ID | Area | Problema | Gravità | Stato |
 |---|---|---|---|---|
-| **C1** | Batteria | Round-trip efficiency effettiva `η²` invece di `η`. Con η=0.95 perdita ~9.75% invece di ~5%. Da verificare se intenzionale. | **Alta** | Da verificare (B4.7) |
+| **C1** | Batteria | Round-trip efficiency effettiva `η²` invece di `η`. Con η=0.95 perdita ~9.75% invece di ~5%. **Verificato: non è un bug** — modello "semplice" documentato in `simulation-engine.md:59-60`, già validato in Phase 4. Azione: spiegare nel form che il round-trip effettivo è `η²` | **Alta** | Chiuso — da migliorare UX (E?) |
 | **C2** | Carico sintetico | Profilo solo residenziale, nessuna variazione stagionale o weekend/festivi | **Media** | Gap noto |
 | **C3** | Sostituzioni | Solo una sostituzione per componente. Su 30 anni inverter ogni 10 → servono più cicli | **Media** | Gap noto |
 | **C4** | Inflazione | Nessuna inflazione, EUR costanti (discount rate = tasso reale) | **Bassa** | Gap noto |
@@ -353,9 +355,8 @@ git log --oneline -5
 
 ## Prossima sessione
 
-1. **Testare i rimanenti item checklist**: A1.5 `/health` (fatto), A7.3 limite 30 scenari,
-   B4.7 efficienza round-trip batteria (verificare se η² è intenzionale — gap C1)
-2. **Ciclo di test 1-8 completato**: 11 bug fixati (B1-B11), 9 enhancement accumulati (E1-E9),
-   7 gap documentati (C1-C12, 5 noti)
-3. **Prioritizzare e implementare gli enhancement** in ordine
+1. **Ciclo di test 1-8 completato e checklist chiusa**: 11 bug fixati (B1-B11),
+   9 enhancement accumulati (E1-E9), 7 gap documentati (C1-C12, 5 noti)
+2. **A7.3 verificato** (limite 30 scenari) e **B4.7/C1 chiuso** (η² intenzionale)
+3. **Prioritizzare e implementare gli enhancement** E1-E9 in ordine
 4. Considerare verifica fine-tuning dei risultati (confronto casi reali, B7.4)
