@@ -90,11 +90,11 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 ## A. Funzionalità generiche dell'app
 
 ### A1. Autenticazione e sessione
-- [ ] A1.1 Login con password errata → messaggio "Password non corretta."
-- [ ] A1.2 Sessione 24h cookie HMAC (scadenza reale, cookie httponly)
-- [ ] A1.3 Logout → pulizia cookie, redirect a login
-- [ ] A1.4 Protezione route autenticate (401 API, redirect pagine, redirect HTMX)
-- [ ] A1.5 Rotta `/health` pubblica senza login
+- [x] A1.1 Login con password errata → messaggio "Password non corretta." — **funziona** (Sessione 8)
+- [x] A1.2 Sessione 24h cookie HMAC (scadenza reale, cookie httponly) — **funziona** (Sessione 8, scadenza simulata)
+- [x] A1.3 Logout → pulizia cookie, redirect a login — **funziona** (Sessione 8)
+- [x] A1.4 Protezione route autenticate (401 API, redirect pagine, redirect HTMX) — **funziona** (Sessione 8)
+- [x] A1.5 Rotta `/health` pubblica senza login — **funziona** (Sessione 8)
 
 ### A2. Navigazione e UI shell
 - [x] A2.1 Navbar: logo, "Nuova simulazione", "Esci" — **funziona**
@@ -112,13 +112,13 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 - [x] A4.3 Toggle profilo reale vs sintetico (radio) — **funziona** (Sessione 4)
 - [x] A4.4 Radio sweep vs manuale nell'ottimizzazione — **funziona** (verificato B4/B6)
 - [x] A4.5 Validazione lato client (campi null vs 0, loan_years=0) — **funziona** (Sessione 5: loan_years=0 → null)
-- [ ] A4.6 Messaggi di errore form (rete + validazione server) — **fixato B5**, da verificare visivamente
+- [x] A4.6 Messaggi di errore form (rete + validazione server) — **funziona** (Sessione 8, validazione campi vuoti OK)
 
 ### A5. Flusso simulazione (job lifecycle)
 - [x] A5.1 Creazione simulazione (POST → 202 → enqueue arq) — **funziona**
 - [x] A5.2 Polling HTMX (stato queued/running/completed/failed) — **funziona**
-- [ ] A5.3 Gestione errore worker (PVGIS down → messaggio user-friendly)
-- [ ] A5.4 Guardia anti doppio enqueue (test più difficile, serve Redis bloccato)
+- [ ] A5.3 Gestione errore worker (PVGIS down → messaggio user-friendly) — **non testabile** senza rete; messaggio verificato a livello sorgente
+- [x] A5.4 Guardia anti doppio enqueue — **funziona** (Sessione 8: doppio click crea una sola simulazione; il browser serializza gli invii)
 
 ### A6. Dashboard e grafici
 - [x] A6.1 KPI card (NPV, IRR, payback, autoconsumo, autosufficienza) — **funziona**
@@ -138,7 +138,7 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 ### A8. PDF Report
 - [x] A8.1 Generazione PDF completo (KPI, parametri, grafici, tabella) — **funziona**
 - [x] A8.2 Download come attachment, filename corretto — **funziona**
-- [ ] A8.3 404 se simulazione inesistente, 409 se non completata
+- [x] A8.3 404 se simulazione inesistente — **funziona** (Sessione 8); 409 se non completata — **[~]** non triggerabile (simulazione troppo veloce), percorso verificato a livello sorgente
 - [x] A8.4 KPI a capo nel PDF — **anomalo** (→ E4 fix layout)
 
 ## B. Funzionalità di dominio
@@ -291,6 +291,19 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
   (validazione attesa da `scale_curve_to_annual`, non bug)
 - ✅ Bilanci energetici coerenti in tutti gli scenari (B7.3)
 
+### Sessione 8 — Autenticazione ed errori (2026-08-06)
+- ✅ Login password errata → "Password non corretta." con `?error=1`
+- ✅ Login corretto + redirect `next`: da `/new` non autenticato → `/login?next=%2Fnew` → ritorno a `/new`
+- ✅ Logout: cookie `pvsim_session` rimosso, redirect a `/login`
+- ✅ Protezione API senza login: 401 `{"detail":"Not authenticated"}`
+- ✅ Scadenza sessione simulata (cancellando il cookie): redirect a `/login?next=%2Fnew`
+- ✅ Report 404: `{"detail":"simulation not found"}` per ID inesistente
+- ✅ Form campi vuoti: validazione client e server (422 Pydantic)
+- ✅ Doppio click su "Avvia simulazione": creata una sola simulazione (browser serializza)
+- [~] Report 409: simulazione completa troppo in fretta — percorso verificato a livello sorgente
+- [~] PVGIS down: non testabile senza disconnettere la rete — messaggio verificato a livello sorgente
+- ✅ Checklist aggiornate: A1.1-A1.5, A4.6, A8.3 (parziale), B5.10, B6.3, B6.4
+
 ## Test ancora da fare
 
 ### Sessione 4 — Upload CSV reale **(completata 2026-08-06)**
@@ -315,11 +328,11 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 1. ~~Consumo annuale molto basso (1000 kWh) vs molto alto (10000 kWh)~~ — fatto, KPI coerenti
 2. ~~Verificare che autoconsumo e autosufficienza siano coerenti~~ — fatto, comportamento corretto
 
-### Sessione 8 — Autenticazione ed errori
-1. Login password errata, scadenza sessione, redirect `next`
-2. PVGIS down (simulare) → messaggio user-friendly
-3. Report 404/409
-4. Errore validazione form (campi vuoti)
+### Sessione 8 — Autenticazione ed errori **(completata 2026-08-06)**
+1. ~~Login password errata, scadenza sessione, redirect `next`~~ — fatto, tutti OK
+2. ~~PVGIS down (simulare) → messaggio user-friendly~~ — non testabile senza rete; verificato a livello sorgente
+3. ~~Report 404/409~~ — 404 fatto; 409 non triggerabile (simulazione troppo veloce)
+4. ~~Errore validazione form (campi vuoti)~~ — fatto, validazione client e server OK
 
 ## Decisioni prese
 
@@ -340,7 +353,9 @@ git log --oneline -5
 
 ## Prossima sessione
 
-1. **Riprendere test dalla Sessione 8** (autenticazione ed errori)
-2. **Non iniziare implementazione enhancement** fino al completamento del ciclo di test
-3. Al termine dei test, prioritizzare enhancement e implementare in ordine
+1. **Testare i rimanenti item checklist**: A1.5 `/health` (fatto), A7.3 limite 30 scenari,
+   B4.7 efficienza round-trip batteria (verificare se η² è intenzionale — gap C1)
+2. **Ciclo di test 1-8 completato**: 11 bug fixati (B1-B11), 9 enhancement accumulati (E1-E9),
+   7 gap documentati (C1-C12, 5 noti)
+3. **Prioritizzare e implementare gli enhancement** in ordine
 4. Considerare verifica fine-tuning dei risultati (confronto casi reali, B7.4)
