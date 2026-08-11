@@ -145,7 +145,7 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 
 ### B1. Dati meteo (weather)
 - [x] B1.1 Fetch PVGIS SARAH3 per coordinate — **funziona** (Roma, Milano, Palermo, Bolzano, Sardegna)
-- [ ] B1.2 Interpolazione 15 minuti (artefatti, NaN, picchi)
+- [x] B1.2 Interpolazione 15 minuti (artefatti, NaN, picchi) — **funziona** (Sessione 6, tutte le località)
 - [ ] B1.3 Cache LRU 32 siti (comportamento con molte simulazioni)
 - [ ] B1.4 Errore PVGIS irraggiungibile → status `failed` con messaggio user-friendly
 - [x] B1.5 Qualità dati est/ovest — **[~]** TMY ha deficit DNI pomeridiano sistematico (PM/AM=0.79) → **E9**
@@ -154,7 +154,7 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 - [x] B2.1 Calcolo produzione con tilt/azimuth — **funziona** (sud 30° vs est/ovest, picchi corretti)
 - [x] B2.2 Clipping inverter (3kW su 6kWp) — **funziona** (verificato da PDF)
 - [x] B2.3 Perdite di sistema 14% — **applicate** (kWh annui plausibili)
-- [ ] B2.4 Produzione annua plausibile per latitudine (kWh/kWp nord 1200-1500, centro-sud 1400-1700)
+- [x] B2.4 Produzione annua plausibile per latitudine (kWh/kWp nord 1200-1500, centro-sud 1400-1700) — **funziona** (Sessione 6: Bolzano 1439, Roma 1444, Catania 1508 kWh/kWp)
 - [ ] B2.5 Modello pannello implicito (CEC lookup) — quale pannello sceglie pvlib? È appropriato?
 
 ### B3. Curva di carico (load_model)
@@ -269,6 +269,18 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 - Nota: la tabella annuale e il grafico cashflow partono da anno 1; l'anno-0 (investimento)
   è incluso solo nell'NPV, non nel cumulativo visualizzato (comportamento valido per tutti i casi)
 
+### Sessione 6 — Località estreme e edge case (2026-08-06)
+- ✅ Bolzano/Roma/Catania: gerarchia produttiva corretta (Catania 7540 > Roma 7220 ≈ Bolzano 7240).
+  Bolzano compensa il minor GHI (1507 vs 1643 kWh/m²) con temperatura media più bassa
+  (8°C vs 16°C → celle più efficienti, gamma_pdc -0.004/°C applicato dal ModelChain)
+- ✅ Sardegna (Sassari): simulazione completa senza errori, produzione simile a Roma
+- ✅ Batteria 0 kWh vs assente: KPI energetici identici; NPV diverso perché il costo batteria
+  resta nell'investimento anche a capacità 0 (comportamento atteso, non bug)
+- ✅ Inverter clipping: sovradimensionato (20 kW) ≈ normale (5 kW); sottodimensionato (1 kW)
+  limita pesantemente la produzione
+- ✅ Orizzonte 20/25/30: payback identico, NPV crescente, IRR cresce, tabelle con righe corrette
+- Nota: seconda sostituzione inverter non visibile su orizzonte 30 anni (gap C3 già documentato)
+
 ## Test ancora da fare
 
 ### Sessione 4 — Upload CSV reale **(completata 2026-08-06)**
@@ -282,12 +294,12 @@ Legenda: **[x]** testato/verificato · **[~]** testato con anomalie (vedi note) 
 2. ~~Sostituzione inverter (anno 10) e batteria (anno 12) nel cashflow~~ — fatto, cali Net CF visibili
 3. ~~RCPV: attivazione anno 0 + canone annuale~~ — fatto, verificato con scenario azzerato
 
-### Sessione 6 — Località estreme e edge case
-1. Località alpine (es. Bolzano 46.5, 11.3) — produzione plausibile?
-2. Località isola (es. Sardegna, Sicilia)
-3. Batteria 0 kWh vs batteria assente (stesso risultato?)
-4. Inverter molto sovradimensionato (no clipping) vs molto sottodimensionato
-5. Orizzonte 20, 25, 30 anni — differenze in payback/IRR
+### Sessione 6 — Località estreme e edge case **(completata 2026-08-06)**
+1. ~~Località alpine (es. Bolzano 46.5, 11.3)~~ — fatto, produzione 7240 kWh plausibile
+2. ~~Località isola (es. Sardegna, Sicilia)~~ — fatto, Sassari OK senza errori
+3. ~~Batteria 0 kWh vs batteria assente~~ — fatto, KPI energetici identici, NPV diverso (costo batteria)
+4. ~~Inverter molto sovradimensionato vs molto sottodimensionato~~ — fatto, clipping corretto
+5. ~~Orizzonte 20, 25, 30 anni~~ — fatto, payback fisso, NPV/IRR crescenti, 2ª sostituzione assente (C3)
 
 ### Sessione 7 — Test carico sintetico
 1. Consumo annuale molto basso (1000 kWh) vs molto alto (10000 kWh)
@@ -318,7 +330,7 @@ git log --oneline -5
 
 ## Prossima sessione
 
-1. **Riprendere test dalla Sessione 6** (località estreme e edge case)
+1. **Riprendere test dalla Sessione 7** (test carico sintetico)
 2. **Non iniziare implementazione enhancement** fino al completamento del ciclo di test
 3. Al termine dei test, prioritizzare enhancement e implementare in ordine
 4. Considerare verifica fine-tuning dei risultati (confronto casi reali, B7.4)
