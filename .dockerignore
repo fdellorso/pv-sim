@@ -1,10 +1,15 @@
 .venv
-__pycache__
-*.pyc
+**/__pycache__
+**/*.pyc
+**/*.egg-info
+.pytest_cache
+.ruff_cache
 .git
 .gitignore
 .env
 .env.*
 data/load_profiles/*.csv
+data/simulation_data
 docs
+tests
 .opencode

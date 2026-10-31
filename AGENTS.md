@@ -104,7 +104,7 @@ src/
                 battery_model, economic_model, optimizer, report
 docs/           architecture, roadmap, development, api, database,
                 simulation-engine, adr/, handoffs/
-data/load_profiles/   archived load curves (CSV), gitignored
+data/load_profiles/   archived load curves (CSV), tracked
 .opencode/      commands/, skills/, agent/
 CONTEXT.md      domain glossary (read before domain work)
 ```

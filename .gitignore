@@ -6,15 +6,22 @@ dist/
 wheels/
 *.egg-info
 
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
 # Virtual environments
 .venv
 
 # Environment files
 .env
 .env.*
+!.env.example
 
-# Load profile archives (raw CSV)
-data/load_profiles/*.csv
+# Node dependencies (any depth)
+node_modules/
+package-lock.json
 
 # Persisted simulation curves (runtime data)
 data/simulation_data/
