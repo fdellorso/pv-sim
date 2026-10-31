@@ -19,10 +19,14 @@
   },
   "permission": {
     "edit": {
-      ".opencode/commands/*": "deny",
-      ".opencode/skills/*": "deny",
-      "opencode.json": "deny",
-      "tui.json": "deny"
+      ".opencode/commands/*": "ask",
+      ".opencode/skills/*": "ask",
+      "opencode.json": "ask",
+      "tui.json": "ask"
+    },
+    "bash": {
+      "rm -rf*": "ask",
+      "*": "allow"
     }
   },
   "mcp": {
@@ -42,10 +46,10 @@
       "extensions": [".py"]
     }
   },
-  "model": "opencode-go/deepseek-v4-flash",
+  "model": "opencode-go/mimo-v2.6-flash",
   "agent": {
     "plan": {
-      "model": "opencode-go/deepseek-v4-pro"
+      "model": "opencode-go/mimo-v2.6-pro"
     }
   }
 }
