@@ -57,13 +57,8 @@
     },
     {
       "action": "edit",
-      "resource": "*.env",
-      "effect": "deny"
-    },
-    {
-      "action": "edit",
-      "resource": "*.env.*",
-      "effect": "deny"
+      "resource": "*.env*",
+      "effect": "ask"
     },
     {
       "action": "edit",
@@ -83,6 +78,11 @@
     {
       "action": "external_directory",
       "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": ".opencode/*",
       "effect": "ask"
     }
   ],
