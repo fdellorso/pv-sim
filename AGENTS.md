@@ -94,6 +94,13 @@ during Phase 1 (see `docs/roadmap.md`).
 - `/handoff` — write a handoff document under `docs/handoffs/`
 - `/commit` — conventional git commit
 
+## Skills
+
+- Test: skill locale `tdd` (NON quella `test-driven-development` del plugin superpowers).
+- ADR e modello di dominio: skill locale `domain-modeling` + `CONTEXT.md`.
+- Motore/architettura: skill locale `pv-sim`; DB: `supabase-postgres-best-practices`.
+- Piani e debug: plugin superpowers globale (`writing-plans`, `systematic-debugging`).
+
 ## Directory Layout
 
 ```

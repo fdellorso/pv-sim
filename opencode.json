@@ -1,8 +1,13 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "instructions": ["AGENTS.md", "CONTEXT.md"],
+  "instructions": [
+    "AGENTS.md",
+    "CONTEXT.md"
+  ],
   "share": "manual",
-  "skills": ["./.opencode/skills"],
+  "skills": [
+    "./.opencode/skills"
+  ],
   "watcher": {
     "ignore": [
       "node_modules/**",
@@ -15,37 +20,100 @@
     ]
   },
   "permissions": [
-    { "action": "shell", "resource": "*", "effect": "allow" },
-    { "action": "shell", "resource": "sudo *", "effect": "deny" },
-    { "action": "shell", "resource": "rm -rf*", "effect": "ask" },
-    { "action": "shell", "resource": "git push --force*", "effect": "deny" },
-    { "action": "shell", "resource": "git push *", "effect": "ask" },
-    { "action": "shell", "resource": "git reset --hard*", "effect": "ask" },
-    { "action": "shell", "resource": "git clean*", "effect": "ask" },
-    { "action": "edit", "resource": "*.env", "effect": "deny" },
-    { "action": "edit", "resource": "*.env.*", "effect": "deny" },
-    { "action": "edit", "resource": "opencode.json", "effect": "ask" },
-    { "action": "edit", "resource": "tui.json", "effect": "ask" },
-    { "action": "edit", "resource": ".opencode/commands/*", "effect": "ask" },
-    { "action": "edit", "resource": ".opencode/skills/*", "effect": "ask" },
-    { "action": "external_directory", "resource": "*", "effect": "ask" }
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "sudo *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "rm -rf*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "git push --force*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "git push *",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "git reset --hard*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "git clean*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "*.env",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*.env.*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "opencode.json",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": ".opencode/commands/*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": ".opencode/skills/*",
+      "effect": "ask"
+    },
+    {
+      "action": "external_directory",
+      "resource": "*",
+      "effect": "ask"
+    }
   ],
   "mcp": {
-    "servers": {
-      "playwright": {
-        "type": "local",
-        "command": ["npx", "@playwright/mcp@latest", "--headless"]
-      }
+    "playwright": {
+      "type": "local",
+      "command": [
+        "npx",
+        "@playwright/mcp@latest",
+        "--headless"
+      ]
     }
   },
   "lsp": {
     "python": {
-      "command": ["pyright", "--stdio"],
-      "extensions": [".py"]
+      "command": [
+        "pyright",
+        "--stdio"
+      ],
+      "extensions": [
+        ".py"
+      ]
     },
     "python-ruff": {
-      "command": ["ruff", "server"],
-      "extensions": [".py"]
+      "command": [
+        "ruff",
+        "server"
+      ],
+      "extensions": [
+        ".py"
+      ]
     }
   },
   "model": "opencode-go/mimo-v2.6-flash",
@@ -53,5 +121,6 @@
     "plan": {
       "model": "opencode-go/mimo-v2.6-pro"
     }
-  }
+  },
+  "update": "auto"
 }
